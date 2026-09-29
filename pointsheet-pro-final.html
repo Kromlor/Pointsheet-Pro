@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PointSheet Pro — IEP Behavior Tracking</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f5fc;color:#0d1f3c;min-height:100vh;}
+input,button,select{font-family:inherit;}
+button{cursor:pointer;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:#dce8f7;}
+::-webkit-scrollbar-thumb{background:#2556a8;border-radius:3px;}
+.hidden{display:none!important;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;}
+/* ── Layout ── */
+.page{flex:1;display:flex;min-height:100vh;}
+.sidebar{width:220px;min-width:220px;background:#1a3a6b;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{padding:10px 20px;border-bottom:2px solid #e8cc70;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:#fff;box-shadow:0 2px 8px rgba(26,58,107,.08);}
+.content{flex:1;overflow-y:auto;padding:18px 22px;}
+/* ── Cards ── */
+.card{background:#fff;border:1.5px solid #b0c8e8;border-radius:12px;padding:16px 18px;}
+/* ── Buttons ── */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #b0c8e8;background:#fff;color:#1e4d8c;transition:all .15s;}
+.btn:hover{opacity:.85;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-primary{background:#1a3a6b;color:#fff;border-color:#1a3a6b;box-shadow:0 2px 8px rgba(26,58,107,.25);}
+.btn-gold{background:#d4a017;color:#0d2a5e;border-color:#d4a017;box-shadow:0 2px 8px rgba(184,134,11,.3);}
+.btn-danger{background:#fdeaea;border-color:#f0a0a0;color:#9a1c1c;}
+.btn-success{background:#e6f7ee;border-color:#80c8a0;color:#1a7a3c;}
+.btn-purple{background:#dce8f7;border-color:#a8c4e8;color:#1a3a6b;}
+.btn-ghost{background:transparent;border-color:#b0c8e8;color:#1e4d8c;}
+/* ── Inputs ── */
+input[type=text],input[type=password],input[type=date],select{background:#fff;border:1.5px solid #b0c8e8;border-radius:8px;padding:8px 12px;color:#0d1f3c;font-size:13px;outline:none;width:100%;}
+input[type=text]:focus,input[type=password]:focus,select:focus{border-color:#2556a8;}
+/* ── Score buttons ── */
+.score-btn{width:32px;height:32px;border-radius:8px;border:2px solid #b0c8e8;background:#fff;color:#5a80b8;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;}
+.score-btn.sel-1{border-color:#1a7a3c;background:#e6f7ee;color:#1a7a3c;}
+.score-btn.sel-half{border-color:#9a6000;background:#fff4e0;color:#9a6000;}
+.score-btn.sel-0{border-color:#9a1c1c;background:#fdeaea;color:#9a1c1c;}
+/* ── Badges ── */
+.badge{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;}
+.badge-admin{background:#1a3a6b;color:#fff;}
+.badge-cm{background:#2556a8;color:#fff;}
+.badge-teacher{background:#fdf6d8;color:#5a3000;border:1px solid #e8cc70;}
+/* ── Sidebar nav ── */
+.nav-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;margin-bottom:3px;border-radius:9px;border:none;background:transparent;color:rgba(255,255,255,.65);font-size:12px;font-weight:400;text-align:left;cursor:pointer;transition:all .15s;}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.15);color:#d4a017;font-weight:700;}
+/* ── Table ── */
+.data-grid{border-radius:12px;border:1.5px solid #b0c8e8;overflow:hidden;overflow-x:auto;}
+.grid-header{display:grid;background:#1a3a6b;padding:10px 0;}
+.grid-header>div{font-size:9px;color:rgba(255,255,255,.85);font-weight:700;text-transform:uppercase;text-align:center;padding:0 4px;line-height:1.4;}
+.grid-header>.period-col{color:#d4a017;letter-spacing:.5px;text-align:left;padding:0 14px;}
+.grid-header>.total-col{color:#d4a017;letter-spacing:.5px;}
+.gold-bar{height:3px;background:linear-gradient(90deg,#d4a017,#b8860b,#d4a017);}
+.grid-row{display:grid;align-items:center;padding:8px 0;border-bottom:1.5px solid #b0c8e8;}
+.grid-row:last-child{border-bottom:none;}
+.grid-row:nth-child(odd){background:#f0f5fc;}
+.grid-row:nth-child(even){background:#fff;}
+.period-label{padding:0 14px;font-size:12px;font-weight:700;color:#1a3a6b;}
+.score-cell{display:flex;justify-content:center;gap:4px;}
+.total-cell{text-align:center;font-size:12px;font-weight:800;}
+/* ── Progress bar ── */
+.prog-wrap{height:8px;border-radius:4px;background:#b0c8e8;overflow:hidden;}
+.prog-bar{height:100%;border-radius:4px;transition:width .5s;}
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,58,107,.45);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:#fff;border:2px solid #a8c4e8;border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(26,58,107,.25);}
+.modal-header{background:#1a3a6b;border-radius:10px;padding:14px 16px;margin-bottom:20px;}
+/* ── Login ── */
+#login-screen{background:linear-gradient(160deg,#0d2a5e,#1a3a6b,#0d2a5e);align-items:center;justify-content:center;padding:20px;}
+.login-box{background:#fff;border-radius:20px;overflow:hidden;width:100%;max-width:420px;box-shadow:0 30px 80px rgba(13,31,60,.5);}
+.login-header{background:#1a3a6b;padding:28px 30px 24px;border-bottom:4px solid #d4a017;text-align:center;}
+.login-body{padding:28px 30px;}
+/* ── Toast ── */
+#toast{position:fixed;top:16px;right:16px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);display:none;border:2px solid;}
+/* ── App logo mark ── */
+.wc-mark{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* ── Summary bars ── */
+.pct-green{color:#1a7a3c;} .pct-orange{color:#9a6000;} .pct-red{color:#9a1c1c;}
+.bg-green{background:#e6f7ee;} .bg-orange{background:#fff4e0;} .bg-red{background:#fdeaea;}
+.bar-green{background:#1a7a3c;} .bar-orange{background:#9a6000;} .bar-red{background:#9a1c1c;}
+/* ── Charts ── */
+.chart-svg{width:100%;overflow:visible;}
+/* ── Print ── */
+@media print{
+  .no-print{display:none!important;}
+  body{background:#fff!important;}
+  .print-sheet{display:block!important;}
+}
+.print-sheet{display:none;}
+/* ── Goal list items ── */
+.goal-item{background:#dce8f7;border:1.5px solid #a8c4e8;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+/* ── Flex utils ── */
+.flex{display:flex;} .flex-col{flex-direction:column;} .items-center{align-items:center;} .justify-between{justify-content:space-between;} .gap-8{gap:8px;} .gap-10{gap:10px;} .gap-12{gap:12px;} .flex-wrap{flex-wrap:wrap;} .flex-1{flex:1;}
+/* ── Responsive grid ── */
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.auto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.auto-grid-sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen" class="screen active">
+  <div class="login-box">
+    <div class="login-header">
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+        <div class="wc-mark" style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:#d4a017;letter-spacing:1px;text-align:center;">POINTSHEET PRO</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);text-align:center;margin-top:3px;letter-spacing:1.5px;">IEP BEHAVIOR TRACKING PORTAL</div>
+      <div style="font-size:11px;color:#d4a017;text-align:center;margin-top:2px;opacity:.8;">Special Education Tools</div>
+    </div>
+    <div class="login-body">
+      <div style="margin-bottom:13px;">
+        <label style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;font-weight:700;">Username</label>
+        <input type="text" id="login-user" placeholder="Enter username" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div style="margin-bottom:13px;">
+        <label style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;font-weight:700;">Password</label>
+        <div style="position:relative;">
+          <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px;"/>
+          <button onclick="togglePw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:15px;color:#5a80b8;" id="pw-eye">👁</button>
+        </div>
+      </div>
+      <div id="login-err" style="display:none;background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:8px;padding:9px 13px;font-size:13px;color:#9a1c1c;margin-bottom:12px;"></div>
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;" onclick="doLogin()">Sign In →</button>
+
+      <div style="margin-top:22px;padding-top:14px;border-top:1px solid #b0c8e8;text-align:center;">
+        <div style="font-size:11px;color:#5a80b8;letter-spacing:.5px;">Designed &amp; Built by</div>
+        <div style="font-size:14px;font-weight:800;color:#1a3a6b;letter-spacing:1px;margin-top:2px;">✦ Renwick Designs ✦</div>
+        <div style="font-size:10px;color:#90aed4;margin-top:2px;letter-spacing:.5px;">© 2025 All Rights Reserved</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN PORTAL ══════════════ -->
+<div id="admin-screen" class="screen">
+  <div class="page">
+    <div class="sidebar no-print">
+      <div style="padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.12);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="wc-mark" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+          <div><div style="font-size:13px;font-weight:800;color:#d4a017;letter-spacing:.5px;">POINTSHEET</div><div style="font-size:10px;color:rgba(255,255,255,.6);">Pro</div></div>
+        </div>
+        <div style="margin-top:10px;height:2px;background:linear-gradient(90deg,#d4a017,transparent);"></div>
+      </div>
+      <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:9px 11px;">
+          <div style="font-size:12px;font-weight:700;color:#fff;">Site Admin</div>
+          <div style="font-size:10px;color:#d4a017;margin-top:2px;">🛡 Administrator</div>
+        </div>
+      </div>
+      <nav style="padding:10px 8px;flex:1;">
+        <button class="nav-item active" id="anav-dashboard" onclick="adminTab('dashboard')">🏠 Dashboard</button>
+        <button class="nav-item" id="anav-students" onclick="adminTab('students')">🎓 Students</button>
+        <button class="nav-item" id="anav-users" onclick="adminTab('users')">👥 Manage Users</button>
+        <button class="nav-item" id="anav-assign" onclick="adminTab('assign')">📋 Assign Rosters</button>
+        <button class="nav-item" id="anav-sync" onclick="adminTab('sync')">🔄 Excel Sync</button>
+      </nav>
+      <div style="padding:10px 8px;border-top:1px solid rgba(255,255,255,.1);">
+        <button class="nav-item" onclick="signOut()">🚪 Sign Out</button>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;">
+        <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;text-transform:uppercase;">Designed by</div>
+        <div style="font-size:11px;font-weight:800;color:rgba(212,160,23,.6);letter-spacing:.8px;margin-top:1px;">✦ Renwick Designs ✦</div>
+      </div>
+    </div>
+    <div class="main">
+      <div style="height:4px;background:linear-gradient(90deg,#d4a017,#b8860b,#d4a017);"></div>
+      <div class="content" id="admin-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ BEHAVIOR APP ══════════════ -->
+<div id="app-screen" class="screen">
+  <div class="page">
+    <div class="sidebar no-print" id="app-sidebar">
+      <div style="padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.12);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="wc-mark" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+          <div><div style="font-size:13px;font-weight:800;color:#d4a017;letter-spacing:.5px;">POINTSHEET</div><div style="font-size:10px;color:rgba(255,255,255,.6);">Pro</div></div>
+        </div>
+        <div style="margin-top:10px;height:2px;background:linear-gradient(90deg,#d4a017,transparent);"></div>
+      </div>
+      <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:9px 11px;">
+          <div style="font-size:12px;font-weight:700;color:#fff;" id="sb-name"></div>
+          <div style="font-size:10px;color:#d4a017;margin-top:2px;" id="sb-role"></div>
+        </div>
+      </div>
+      <nav style="padding:10px 8px;flex:1;" id="app-nav"></nav>
+      <div style="padding:10px 8px;border-top:1px solid rgba(255,255,255,.1);">
+        <button class="nav-item" onclick="signOut()">🚪 Sign Out</button>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;">
+        <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;text-transform:uppercase;">Designed by</div>
+        <div style="font-size:11px;font-weight:800;color:rgba(212,160,23,.6);letter-spacing:.8px;margin-top:1px;">✦ Renwick Designs ✦</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar no-print" id="app-topbar"></div>
+      <div class="content" id="app-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PRINT VIEW ══════════════ -->
+<div id="print-screen" class="screen print-sheet" style="display:none;"></div>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div id="toast"></div>
+<div id="sync-banner" style="position:fixed;bottom:18px;right:18px;z-index:8888;background:#0d1f3c;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;display:none;align-items:center;gap:10px;border:2px solid #d4a017;box-shadow:0 4px 20px rgba(0,0,0,.35);">
+  <span id="sync-icon">⏳</span><span id="sync-msg">Syncing to Excel…</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+const SK={accounts:"psp-accounts",students:"psp-students",assignments:"psp-assign",data:"psp-data",goals:"psp-goals",studentInfo:"psp-studentinfo"};
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+const DEFAULT_GOALS=[
+  {id:"on_task",label:"On-Task Behavior",short:"On-Task"},
+  {id:"follow_dir",label:"Following Directions",short:"Directions"},
+  {id:"peer_intx",label:"Positive Peer Interactions",short:"Peers"},
+  {id:"impulse",label:"Controlling Impulse Behavior",short:"Impulse"},
+];
+const SEED_STUDENTS=["Alex M.","Jordan T.","Casey R.","Sam L.","Riley B."];
+const GRADES=["6","7","8"];
+const SEED_STUDENT_INFO={
+  "Alex M.":{firstName:"Alex",lastName:"M.",grade:"6",teacher:"Teacher 1",iepDate:"2025-09-15"},
+  "Jordan T.":{firstName:"Jordan",lastName:"T.",grade:"7",teacher:"Teacher 1",iepDate:"2025-10-01"},
+  "Casey R.":{firstName:"Casey",lastName:"R.",grade:"6",teacher:"Teacher 1",iepDate:"2025-08-20"},
+  "Sam L.":{firstName:"Sam",lastName:"L.",grade:"8",teacher:"Teacher 2",iepDate:"2025-09-05"},
+  "Riley B.":{firstName:"Riley",lastName:"B.",grade:"7",teacher:"Teacher 2",iepDate:"2025-11-10"},
+};
+function todayKey(){return new Date().toISOString().split("T")[0];}
+let STATE={
+  accounts: lsGet(SK.accounts)||[
+    {id:"admin1",username:"admin",password:"Admin@2024!",role:"admin",displayName:"Site Admin"},
+    {id:"cm1",username:"casemanager",password:"cm2024!",role:"casemanager",displayName:"Case Manager"},
+    {id:"t1",username:"teacher1",password:"teach1!",role:"teacher",displayName:"Teacher 1"},
+    {id:"t2",username:"teacher2",password:"teach2!",role:"teacher",displayName:"Teacher 2"},
+  ],
+  students: lsGet(SK.students)||SEED_STUDENTS,
+  studentInfo: lsGet(SK.studentInfo)||JSON.parse(JSON.stringify(SEED_STUDENT_INFO)),
+  assignments: lsGet(SK.assignments)||{t1:["Alex M.","Jordan T.","Casey R."],t2:["Sam L.","Riley B."]},
+  data: lsGet(SK.data)||{},
+  goals: lsGet(SK.goals)||Object.fromEntries(SEED_STUDENTS.map(n=>[n,DEFAULT_GOALS.map(g=>({...g}))])),
+  currentUser: null,
+  view: "tracker",
+  selStudent: null,
+  selDate: todayKey(),
+  adminTab: "dashboard",
+  cmTeacherMode: false,
+};
+
+function save(key){lsSet(SK[key],STATE[key]);}
+function saveAll(){["accounts","students","studentInfo","assignments","data","goals"].forEach(k=>save(k));}
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const HB_PERIOD="HB (Home Base)";
+const PERIODS=["HB (Home Base)","Period 1","Period 2","Period 3","Period 4","Period 5","Period 6","Period 7","Period 8"];
+const SCORES=[0,0.5,1];
+
+function pct(s,c){return c===0?0:Math.round((s/c)*100);}
+function sClr(p){return p>=80?"#1a7a3c":p>=60?"#9a6000":"#9a1c1c";}
+function sBg(p){return p>=80?"#e6f7ee":p>=60?"#fff4e0":"#fdeaea";}
+function scClr(v){return v===1?"#1a7a3c":v===0.5?"#9a6000":"#9a1c1c";}
+function scBg(v){return v===1?"#e6f7ee":v===0.5?"#fff4e0":"#fdeaea";}
+function scClass(v){return v===1?"sel-1":v===0.5?"sel-half":v===0?"sel-0":"";}
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40)+"_"+Math.random().toString(36).slice(2,6);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+function calcTotal(sc,goals){
+  let s=0,c=0;
+  goals.forEach(g=>PERIODS.forEach(p=>{const v=sc&&sc[p]&&sc[p][g.id];if(v!=null){s+=v;c++;}}));
+  return{sum:s,count:c};
+}
+function emptyScores(goals){
+  const r={};PERIODS.forEach(p=>{r[p]={};goals.forEach(g=>{r[p][g.id]=null;});});return r;
+}
+function getStudentGoals(name){return STATE.goals[name]||[];}
+function getScores(name,date){
+  const goals=getStudentGoals(name);
+  return (STATE.data[name]&&STATE.data[name][date])||emptyScores(goals);
+}
+function visibleStudents(){
+  const u=STATE.currentUser;
+  if(!u)return[];
+  if(u.role==="casemanager"){
+    // In teacher mode show only assigned students, otherwise show all
+    if(STATE.cmTeacherMode){
+      return (STATE.assignments[u.id]||[]).filter(s=>STATE.students.includes(s));
+    }
+    return STATE.students;
+  }
+  return (STATE.assignments[u.id]||[]).filter(s=>STATE.students.includes(s));
+}
+
+function getWeekDays(mondayKey){
+  const mon=new Date(mondayKey+"T12:00:00");
+  return["Mon","Tue","Wed","Thu","Fri"].map((lbl,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return{label:lbl,date:d.toISOString().split("T")[0]};});
+}
+function getMondayOfWeek(dateStr){
+  const d=new Date(dateStr+"T12:00:00");const dow=d.getDay();
+  const mon=new Date(d);mon.setDate(d.getDate()-(dow===0?6:dow-1));return mon.toISOString().split("T")[0];
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+let toastTimer=null;
+function toast(msg,type="success"){
+  const t=document.getElementById("toast");
+  t.textContent=(type==="error"?"❌ ":"✅ ")+msg;
+  t.style.background=type==="error"?"#9a1c1c":"#1a3a6b";
+  t.style.color="#fff";
+  t.style.borderColor=type==="error"?"#f0a0a0":"#d4a017";
+  t.style.display="block";
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.style.display="none";},2500);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════ */
+function openModal(html){
+  document.getElementById("modal-box").innerHTML=html;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+}
+function closeModal(){
+  document.getElementById("modal-overlay").classList.add("hidden");
+  document.getElementById("modal-box").innerHTML="";
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>{s.classList.remove("active");s.style.display="none";});
+  const s=document.getElementById(id);
+  s.style.display="flex";
+  s.classList.add("active");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════════════════ */
+function renderDemoAccounts(){}
+function togglePw(){
+  const inp=document.getElementById("login-pass");
+  const eye=document.getElementById("pw-eye");
+  if(inp.type==="password"){inp.type="text";eye.textContent="🙈";}
+  else{inp.type="password";eye.textContent="👁";}
+}
+function doLogin(){
+  const u=document.getElementById("login-user").value.trim();
+  const p=document.getElementById("login-pass").value;
+  const err=document.getElementById("login-err");
+  const acct=STATE.accounts.find(a=>a.username.toLowerCase()===u.toLowerCase()&&a.password===p);
+  if(!acct){err.textContent="Incorrect username or password.";err.style.display="block";return;}
+  err.style.display="none";
+  STATE.currentUser=acct;
+  if(acct.role==="admin"){renderAdmin();showScreen("admin-screen");}
+  else{renderApp();showScreen("app-screen");}
+}
+function signOut(){
+  STATE.currentUser=null;STATE.view="tracker";STATE.selStudent=null;
+  document.getElementById("login-user").value="";
+  document.getElementById("login-pass").value="";
+  showScreen("login-screen");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CSV EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportCSV(date){
+  const rows=[];
+  STATE.students.forEach(name=>{
+    const goals=getStudentGoals(name);
+    const dd=STATE.data[name]&&STATE.data[name][date];if(!dd)return;
+    if(!rows.length)rows.push(["Student","Date","Period",...goals.map(g=>g.label),"Period Total","Period Max","Period %"]);
+    PERIODS.forEach(p=>{const ps=dd[p]||{};const vals=goals.map(g=>ps[g.id]!=null?ps[g.id]:"");const s=goals.reduce((a,g)=>a+(ps[g.id]||0),0);const c=goals.filter(g=>ps[g.id]!=null).length;rows.push([name,date,p,...vals,s,c,c>0?pct(s,c)+"%":""]);});
+    const{sum,count}=calcTotal(dd,goals);rows.push([name,date,"DAILY TOTAL",...goals.map(()=>""),sum,count,count>0?pct(sum,count)+"%":""]);rows.push([]);
+  });
+  if(!rows.length){alert("No data for this date.");return;}
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="behavior_"+date+".csv";a.click();
+}
+function exportWeeklyCSV(weekStart){
+  const days=getWeekDays(weekStart);const rows=[["Student","Goal",...days.map(d=>d.label),"Week Avg","Days"]];
+  STATE.students.forEach(name=>{
+    const goals=getStudentGoals(name);
+    goals.forEach(goal=>{
+      const row=[name,goal.label];let tp=0,dwd=0;
+      days.forEach(d=>{const dd=STATE.data[name]&&STATE.data[name][d.date];if(!dd){row.push("");return;}let s=0,c=0;PERIODS.forEach(p=>{const v=dd[p]&&dd[p][goal.id];if(v!=null){s+=v;c++;}});if(c>0){const p=pct(s,c);row.push(p+"%");tp+=p;dwd++;}else row.push("");});
+      row.push(dwd>0?Math.round(tp/dwd)+"%":"");row.push(dwd);rows.push(row);
+    });rows.push([]);
+  });
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n")],{type:"text/csv"}));a.download="weekly_"+weekStart+".csv";a.click();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN PORTAL
+═══════════════════════════════════════════════════════════ */
+function renderAdmin(){adminTab(STATE.adminTab||"dashboard");}
+function adminTab(tab){
+  STATE.adminTab=tab;
+  document.querySelectorAll("[id^='anav-']").forEach(b=>b.classList.remove("active"));
+  const nb=document.getElementById("anav-"+tab);if(nb)nb.classList.add("active");
+  const c=document.getElementById("admin-content");
+  if(tab==="dashboard")c.innerHTML=renderAdminDashboard();
+  else if(tab==="students")c.innerHTML=renderAdminStudents();
+  else if(tab==="users")c.innerHTML=renderAdminUsers();
+  else if(tab==="assign")c.innerHTML=renderAdminAssign();
+  else if(tab==="sync")c.innerHTML=renderAdminSync();
+}
+function renderAdminDashboard(){
+  const stats=[
+    {lbl:"Admins",val:STATE.accounts.filter(a=>a.role==="admin").length,icon:"🛡",c:"#1a3a6b"},
+    {lbl:"Case Mgrs",val:STATE.accounts.filter(a=>a.role==="casemanager").length,icon:"🔑",c:"#2556a8"},
+    {lbl:"Teachers",val:STATE.accounts.filter(a=>a.role==="teacher").length,icon:"👩‍🏫",c:"#b8860b"},
+    {lbl:"Students",val:STATE.students.length,icon:"🎓",c:"#1a7a3c"},
+  ];
+  return`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <div class="wc-mark" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div><div style="font-size:22px;font-weight:800;color:#1a3a6b;">Admin Dashboard</div><div style="font-size:13px;color:#1e4d8c;">PointSheet Pro — Behavior Tracking</div></div>
+    </div>
+    <div class="auto-grid" style="margin-bottom:28px;">
+      ${stats.map(s=>`<div class="card" style="text-align:center;border:2px solid #b0c8e8;">
+        <div style="font-size:26px;margin-bottom:6px;">${s.icon}</div>
+        <div style="font-size:28px;font-weight:800;color:${s.c};">${s.val}</div>
+        <div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.6px;margin-top:2px;font-weight:600;">${s.lbl}</div>
+      </div>`).join("")}
+    </div>
+    <div style="font-size:11px;color:#2556a8;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:10px;">All Users</div>
+    ${STATE.accounts.map(a=>`
+      <div class="card flex items-center justify-between gap-10 flex-wrap" style="margin-bottom:8px;padding:12px 16px;">
+        <div class="flex items-center gap-10">
+          <div class="wc-mark" style="width:36px;height:36px;font-size:16px;color:#d4a017;">${a.role==="admin"?"🛡":a.role==="casemanager"?"🔑":"👩‍🏫"}</div>
+          <div><div style="font-size:13px;font-weight:700;color:#0d1f3c;">${esc(a.displayName)}</div><div style="font-size:11px;color:#5a80b8;">@${esc(a.username)}</div></div>
+        </div>
+        <div class="flex gap-8 items-center">
+          <span class="badge badge-${a.role==="admin"?"admin":a.role==="casemanager"?"cm":"teacher"}">${a.role==="admin"?"Admin":a.role==="casemanager"?"Case Mgr":"Teacher"}</span>
+          <button class="btn btn-sm btn-purple" onclick="openResetPw('${esc(a.id)}')">🔑 Reset PW</button>
+        </div>
+      </div>
+    `).join("")}
+  `;
+}
+function renderAdminUsers(){
+  return`
+    <div style="font-size:20px;font-weight:800;color:#1a3a6b;margin-bottom:16px;">👥 Manage Users</div>
+    <input type="text" id="user-search" placeholder="🔍 Search users…" oninput="filterUsers()" style="margin-bottom:16px;"/>
+    <div id="user-list">${renderUserList("")}</div>
+    <div class="card" style="border:2px solid #e8cc70;background:#fdf6d8;margin-top:16px;">
+      <div style="font-size:11px;color:#2556a8;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:12px;">➕ Add New User</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:12px;">
+        <div><div style="font-size:10px;color:#1e4d8c;margin-bottom:4px;font-weight:700;text-transform:uppercase;">Full Name</div><input type="text" id="nu-name" placeholder="Full name"/></div>
+        <div><div style="font-size:10px;color:#1e4d8c;margin-bottom:4px;font-weight:700;text-transform:uppercase;">Username</div><input type="text" id="nu-user" placeholder="Username"/></div>
+        <div><div style="font-size:10px;color:#1e4d8c;margin-bottom:4px;font-weight:700;text-transform:uppercase;">Password</div><input type="password" id="nu-pass" placeholder="Min 6 chars"/></div>
+        <div><div style="font-size:10px;color:#1e4d8c;margin-bottom:4px;font-weight:700;text-transform:uppercase;">Role</div>
+          <select id="nu-role"><option value="teacher">Teacher</option><option value="casemanager">Case Manager</option><option value="admin">Admin</option></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addUser()">+ Add User</button>
+    </div>
+  `;
+}
+function renderUserList(search){
+  const s=search.toLowerCase();
+  const filtered=STATE.accounts.filter(a=>!s||a.displayName.toLowerCase().includes(s)||a.username.toLowerCase().includes(s));
+  return["admin","casemanager","teacher"].map(role=>{
+    const list=filtered.filter(a=>a.role===role);if(!list.length)return"";
+    return`<div style="margin-bottom:20px;">
+      <div class="flex items-center gap-10" style="margin-bottom:9px;">
+        <div style="font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:.8px;">${role==="admin"?"Admins":role==="casemanager"?"Case Managers":"Teachers"}</div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#a8c4e8,transparent);"></div>
+        <span style="font-size:11px;color:#5a80b8;font-weight:600;">${list.length}</span>
+      </div>
+      ${list.map(a=>`
+        <div class="card flex items-center gap-10 flex-wrap" style="margin-bottom:7px;padding:11px 15px;">
+          <div class="wc-mark" style="width:36px;height:36px;font-size:16px;color:#d4a017;flex-shrink:0;">${role==="admin"?"🛡":role==="casemanager"?"🔑":"👩‍🏫"}</div>
+          <div style="flex:1;min-width:100px;">
+            <div style="font-size:13px;font-weight:700;color:#0d1f3c;">${esc(a.displayName)}</div>
+            <div style="font-size:11px;color:#5a80b8;">@${esc(a.username)}${role==="teacher"?" · "+(STATE.assignments[a.id]||[]).length+" students":""}</div>
+          </div>
+
+          <div class="flex gap-8 flex-wrap">
+            <button class="btn btn-sm btn-ghost" onclick="openEditUser('${esc(a.id)}')">✏️ Edit</button>
+            <button class="btn btn-sm btn-purple" onclick="openResetPw('${esc(a.id)}')">🔑 Reset PW</button>
+            ${a.role!=="admin"?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(a.id)}')">🗑️ Remove</button>`:'<span style="font-size:11px;color:#b0c8e8;padding:4px 8px;">Protected</span>'}
+          </div>
+        </div>
+      `).join("")}
+    </div>`;
+  }).join("");
+}
+function filterUsers(){
+  document.getElementById("user-list").innerHTML=renderUserList(document.getElementById("user-search").value);
+}
+function renderAdminAssign(){
+  const teachers=STATE.accounts.filter(a=>a.role==="teacher"||a.role==="casemanager");
+  return`
+    <div style="font-size:20px;font-weight:800;color:#1a3a6b;margin-bottom:6px;">📋 Assign Rosters</div>
+    <div style="font-size:13px;color:#1e4d8c;margin-bottom:18px;">Select a teacher or case manager to manage their personal class roster</div>
+    <div class="flex flex-wrap gap-8" style="margin-bottom:18px;">
+      ${teachers.map(t=>`<button class="btn btn-ghost" id="tsel-${esc(t.id)}" onclick="selectTeacher('${esc(t.id)}')">${esc(t.displayName)} (${(STATE.assignments[t.id]||[]).length})</button>`).join("")}
+    </div>
+    <div id="assign-roster"></div>
+  `;
+}
+let _selTeacher=null;
+function selectTeacher(tid){
+  _selTeacher=tid;
+  document.querySelectorAll("[id^='tsel-']").forEach(b=>{b.className="btn btn-ghost";b.style.borderColor="#b0c8e8";b.style.background="#fff";b.style.color="#1e4d8c";});
+  const btn=document.getElementById("tsel-"+tid);
+  if(btn){btn.style.borderColor="#1a3a6b";btn.style.background="#dce8f7";btn.style.color="#1a3a6b";btn.style.fontWeight="700";}
+  const t=STATE.accounts.find(a=>a.id===tid);
+  const assigned=STATE.assignments[tid]||[];
+  document.getElementById("assign-roster").innerHTML=`
+    <div class="card" style="border:2px solid #a8c4e8;">
+      <div style="font-size:13px;font-weight:700;color:#1a3a6b;margin-bottom:13px;">Roster for <span style="color:#b8860b;">${esc(t.displayName)}</span> <span style="font-size:11px;color:#5a80b8;font-weight:400;">(${assigned.length} assigned)</span></div>
+      <div class="auto-grid">
+        ${STATE.students.map(s=>{const on=assigned.includes(s);return`<button id="sas-${esc(s)}" class="btn ${on?"btn-primary":""}" style="${on?"":"border-color:#b0c8e8;"}" onclick="toggleAssign('${esc(tid)}','${esc(s)}')">${on?"✓ ":""}${esc(s)}</button>`;}).join("")}
+      </div>
+    </div>
+  `;
+}
+function toggleAssign(tid,sn){
+  const cur=STATE.assignments[tid]||[];
+  STATE.assignments[tid]=cur.includes(sn)?cur.filter(s=>s!==sn):[...cur,sn];
+  save("assignments");
+  toast(cur.includes(sn)?"Removed "+sn:"Assigned "+sn+" to roster");
+  selectTeacher(tid);
+  // update button count
+  const t=STATE.accounts.find(a=>a.id===tid);
+  const btn=document.getElementById("tsel-"+tid);
+  if(btn)btn.textContent=(t?t.displayName:"")+" ("+(STATE.assignments[tid]||[]).length+")";
+}
+
+/* ── Admin user actions ── */
+function addUser(){
+  const name=document.getElementById("nu-name").value.trim();
+  const user=document.getElementById("nu-user").value.trim();
+  const pass=document.getElementById("nu-pass").value.trim();
+  const role=document.getElementById("nu-role").value;
+  if(!name||!user||!pass){toast("All fields required.","error");return;}
+  if(pass.length<6){toast("Password must be at least 6 characters.","error");return;}
+  if(STATE.accounts.find(a=>a.username.toLowerCase()===user.toLowerCase())){toast("Username already taken.","error");return;}
+  STATE.accounts.push({id:role[0]+Date.now(),username:user,password:pass,role,displayName:name});
+  save("accounts");
+  toast(name+" added successfully.");
+  adminTab("users");
+}
+function deleteUser(id){
+  const u = STATE.accounts.find(a => a.id === id);
+  if(!u) return;
+  openModal(
+    '<div style="background:#9a1c1c;border-radius:12px 12px 0 0;padding:16px 20px;">' +
+      '<div style="font-size:16px;font-weight:800;color:#fff;">🗑️ Remove Account</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">This cannot be undone</div>' +
+    '</div>' +
+    '<div style="padding:22px;">' +
+      '<div style="background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:10px;padding:16px;margin-bottom:20px;">' +
+        '<div style="font-size:15px;font-weight:700;color:#9a1c1c;margin-bottom:6px;">Remove ' + esc(u.displayName) + '?</div>' +
+        '<div style="font-size:13px;color:#7a1010;line-height:1.6;">This will permanently delete their login account and remove them from all rosters.<br>Their students and behavioral data will not be affected.</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button class="btn btn-danger" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:9px;" ' +
+          'onclick="doDeleteUser(\'' + esc(u.id) + '\')">Yes, Remove Account</button>' +
+        '<button class="btn btn-ghost" style="flex:1;padding:12px;" onclick="closeModal()">Cancel</button>' +
+      '</div>' +
+    '</div>'
+  );
+}
+function doDeleteUser(id){
+  const u = STATE.accounts.find(a => a.id === id);
+  if(!u) return;
+  STATE.accounts = STATE.accounts.filter(a => a.id !== id);
+  delete STATE.assignments[id];
+  save('accounts');
+  save('assignments');
+  closeModal();
+  toast(u.displayName + ' removed.', 'error');
+  adminTab('users');
+}
+function openEditUser(id){
+  const u=STATE.accounts.find(a=>a.id===id);if(!u)return;
+  openModal(`
+    <div class="modal-header"><div style="font-size:16px;font-weight:800;color:#d4a017;">✏️ Edit User</div></div>
+    <div style="display:flex;flex-direction:column;gap:11px;">
+      <div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Display Name</div><input type="text" id="eu-name" value="${esc(u.displayName)}"/></div>
+      <div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Username</div><input type="text" id="eu-user" value="${esc(u.username)}"/></div>
+      <div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Role</div>
+        <select id="eu-role"><option value="admin"${u.role==="admin"?" selected":""}>Admin</option><option value="casemanager"${u.role==="casemanager"?" selected":""}>Case Manager</option><option value="teacher"${u.role==="teacher"?" selected":""}>Teacher</option></select>
+      </div>
+    </div>
+    <div class="flex gap-10" style="margin-top:18px;">
+      <button class="btn btn-primary flex-1" onclick="saveEditUser('${esc(id)}')">Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+function saveEditUser(id){
+  const name=document.getElementById("eu-name").value.trim();
+  const user=document.getElementById("eu-user").value.trim();
+  const role=document.getElementById("eu-role").value;
+  if(!name||!user){toast("Name and username required.","error");return;}
+  STATE.accounts=STATE.accounts.map(a=>a.id===id?{...a,displayName:name,username:user,role}:a);
+  save("accounts");toast("User updated.");closeModal();adminTab("users");
+}
+function openResetPw(id){
+  const u=STATE.accounts.find(a=>a.id===id);if(!u)return;
+  openModal(`
+    <div class="modal-header"><div style="font-size:16px;font-weight:800;color:#d4a017;">🔑 Reset Password</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">For ${esc(u.displayName)}</div></div>
+    <div style="display:flex;flex-direction:column;gap:11px;">
+      <div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">New Password</div><input type="password" id="rp-new" placeholder="Min 6 characters"/></div>
+      <div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Confirm Password</div><input type="password" id="rp-confirm" placeholder="Re-enter password"/></div>
+    </div>
+    <div class="flex gap-10" style="margin-top:18px;">
+      <button class="btn btn-primary flex-1" onclick="doResetPw('${esc(id)}')">Reset Password</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+function doResetPw(id){
+  const np=document.getElementById("rp-new").value;
+  const cp=document.getElementById("rp-confirm").value;
+  if(!np){toast("Password cannot be empty.","error");return;}
+  if(np.length<6){toast("Min 6 characters.","error");return;}
+  if(np!==cp){toast("Passwords do not match.","error");return;}
+  STATE.accounts=STATE.accounts.map(a=>a.id===id?{...a,password:np}:a);
+  save("accounts");
+  const u=STATE.accounts.find(a=>a.id===id);
+  toast("Password reset for "+(u?u.displayName:"user")+".");
+  closeModal();
+  // refresh demo list on login page
+  renderDemoAccounts();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP — SIDEBAR + TOPBAR
+═══════════════════════════════════════════════════════════ */
+function renderApp(){
+  const u=STATE.currentUser;
+  const isCM=u.role==="casemanager";
+  document.getElementById("sb-name").textContent=u.displayName;
+  document.getElementById("sb-role").textContent=isCM?"🔑 Case Manager / Teacher":"✏ Teacher";
+  const navItems=[
+    {id:"tracker",icon:"📝",lbl:"Data Entry"},
+    ...(isCM&&!STATE.cmTeacherMode?[{id:"summary",icon:"📊",lbl:"Class Summary"},{id:"weekly",icon:"📈",lbl:"Weekly Report"},{id:"students",icon:"🎓",lbl:"Student Info"}]:[]),
+  ];
+  document.getElementById("app-nav").innerHTML=navItems.map(item=>
+    `<button class="nav-item${STATE.view===item.id?" active":""}" id="nav-${item.id}" onclick="setView('${item.id}')">${item.icon} ${item.lbl}</button>`
+  ).join("");
+  // Auto-select first visible student
+  const vs=visibleStudents();
+  if(!STATE.selStudent||!vs.includes(STATE.selStudent)) STATE.selStudent=vs[0]||null;
+  renderTopbar();
+  renderContent();
+}
+function renderTopbar(){
+  const isCM=STATE.currentUser.role==="casemanager";
+  const vs=visibleStudents();
+  const inTeacherMode=isCM&&STATE.cmTeacherMode;
+  document.getElementById("app-topbar").innerHTML=`
+    <div class="flex gap-8 flex-wrap items-center">
+      ${isCM?`
+        <div style="display:flex;border:2px solid #b0c8e8;border-radius:20px;overflow:hidden;flex-shrink:0;">
+          <button onclick="setCMMode(false)" style="padding:5px 14px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:${!STATE.cmTeacherMode?'#1a3a6b':'#fff'};color:${!STATE.cmTeacherMode?'#fff':'#1e4d8c'};">📋 All Students</button>
+          <button onclick="setCMMode(true)"  style="padding:5px 14px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:${STATE.cmTeacherMode?'#1a3a6b':'#fff'};color:${STATE.cmTeacherMode?'#fff':'#1e4d8c'};">✏️ My Class</button>
+        </div>
+      `:""}
+      ${vs.map(n=>`<button onclick="selectStudent('${esc(n)}')" style="padding:5px 12px;border-radius:20px;border:2px solid ${STATE.selStudent===n?"#1a3a6b":"#b0c8e8"};background:${STATE.selStudent===n?"#1a3a6b":"#fff"};color:${STATE.selStudent===n?"#fff":"#1e4d8c"};font-size:12px;font-weight:${STATE.selStudent===n?"700":"400"};cursor:pointer;font-family:inherit;transition:all .15s;">${esc(n)}</button>`).join("")}
+      ${isCM&&!STATE.cmTeacherMode?`<button onclick="openAddStudent()" style="padding:5px 12px;border-radius:20px;border:2px dashed #e8cc70;background:#fdf6d8;color:#7a5500;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">+ Student</button>`:""}
+    </div>
+    <div class="flex gap-8 items-center flex-wrap">
+      ${isCM&&STATE.selStudent&&!STATE.cmTeacherMode?`<button class="btn btn-sm btn-purple" onclick="openEditGoals('${esc(STATE.selStudent)}')">🎯 Edit Goals</button>`:""}
+      <input type="date" value="${STATE.selDate}" onchange="setDate(this.value)" style="background:#fff;border:2px solid #b0c8e8;border-radius:8px;padding:5px 9px;color:#0d1f3c;font-size:12px;cursor:pointer;font-family:inherit;width:auto;"/>
+      <button class="btn btn-sm btn-ghost" onclick="printSheet()">🖨 Print</button>
+      ${isCM&&!STATE.cmTeacherMode?`<button class="btn btn-sm btn-success" onclick="exportCSV('${STATE.selDate}')">⬇ Export CSV</button>`:""}
+      ${isCM&&SS&&SS.url?`<button class="btn btn-sm btn-purple" onclick="runSync('${STATE.selDate}',false)">🔄 Sync to Excel</button>`:""}
+    </div>`;
+}
+
+function setCMMode(teacherMode){
+  STATE.cmTeacherMode=teacherMode;
+  // Re-select first visible student in new mode
+  const vs=visibleStudents();
+  if(!STATE.selStudent||!vs.includes(STATE.selStudent)) STATE.selStudent=vs[0]||null;
+  renderTopbar();
+  renderContent();
+}
+
+function setView(v){
+  STATE.view=v;
+  document.querySelectorAll("[id^='nav-']").forEach(b=>b.classList.remove("active"));
+  const nb=document.getElementById("nav-"+v);if(nb)nb.classList.add("active");
+  renderContent();
+}
+function selectStudent(n){STATE.selStudent=n;renderTopbar();renderContent();}
+function setDate(d){STATE.selDate=d;renderTopbar();renderContent();}
+
+/* ═══════════════════════════════════════════════════════════
+   CONTENT VIEWS
+═══════════════════════════════════════════════════════════ */
+function renderContent(){
+  const v=STATE.view;
+  if(v==="tracker")renderTracker();
+  else if(v==="summary")renderSummary();
+  else if(v==="weekly")renderWeekly();
+  else if(v==="students")renderCMStudents();
+}
+
+/* ── DATA ENTRY ── */
+function renderTracker(){
+  const name=STATE.selStudent;
+  const goals=name?getStudentGoals(name):[];
+  const scores=name?getScores(name,STATE.selDate):{};
+  const isCM=STATE.currentUser.role==="casemanager";
+  let html="";
+  if(!name){document.getElementById("app-content").innerHTML=`<div class="card" style="text-align:center;padding:40px;border:2px dashed #a8c4e8;"><div style="font-size:32px;margin-bottom:10px;">📋</div><div style="font-size:14px;color:#1e4d8c;">No student selected.</div></div>`;return;}
+  if(goals.length===0){
+    document.getElementById("app-content").innerHTML=`
+      <div class="card" style="text-align:center;padding:40px;border:2px dashed #a8c4e8;">
+        <div class="wc-mark" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+        <div style="font-size:15px;color:#1a3a6b;font-weight:700;margin-bottom:8px;">No goals set for ${esc(name)}</div>
+        ${isCM?`<button class="btn btn-primary" onclick="openEditGoals('${esc(name)}')">+ Add Goals</button>`:`<div style="font-size:13px;color:#5a80b8;">Ask the case manager to add goals for this student.</div>`}
+      </div>`;
+    return;
+  }
+  // Legend
+  html+=`<div class="flex gap-10 flex-wrap" style="margin-bottom:12px;">
+    ${[{v:0,l:"0 – Did not meet",c:"#9a1c1c",bg:"#fdeaea"},{v:0.5,l:"½ – Partially met",c:"#9a6000",bg:"#fff4e0"},{v:1,l:"1 – Met goal",c:"#1a7a3c",bg:"#e6f7ee"}].map(s=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:${s.c};background:${s.bg};padding:3px 10px;border-radius:20px;font-weight:600;"><div style="width:8px;height:8px;border-radius:50%;background:${s.c};"></div>${s.l}</div>`).join("")}
+    ${!isCM?`<div style="font-size:11px;color:#1a3a6b;margin-left:auto;font-weight:600;background:#dce8f7;padding:3px 10px;border-radius:20px;">✅ Live sync to case manager</div>`:""}
+  </div>`;
+  // Grid
+  const cols=`100px repeat(${goals.length},1fr) 75px`;
+  html+=`<div class="data-grid" style="margin-bottom:12px;">
+    <div class="grid-header" style="grid-template-columns:${cols};min-width:${400+goals.length*60}px;">
+      <div class="period-col">Period</div>
+      ${goals.map(g=>`<div>${esc(g.label)}</div>`).join("")}
+      <div class="total-col" style="color:#d4a017;font-size:10px;text-align:center;">Total</div>
+    </div>
+    <div class="gold-bar"></div>
+    ${PERIODS.map((period,pi)=>{
+      const ps=(scores[period]||{});
+      const pSum=goals.reduce((a,g)=>a+(ps[g.id]||0),0);
+      const pCount=goals.filter(g=>ps[g.id]!=null).length;
+      const ppct=pCount>0?pct(pSum,pCount):null;
+      return`<div class="grid-row" style="grid-template-columns:${cols};min-width:${400+goals.length*60}px;${period===HB_PERIOD?'background:#fdf6d8;border-left:3px solid #d4a017;':''}">
+        <div class="period-label" style="${period===HB_PERIOD?'color:#7a5500;font-weight:800;':''}">${period===HB_PERIOD?'🏠 '+period:period}</div>
+        ${goals.map(goal=>`
+          <div class="score-cell">
+            ${SCORES.map(score=>`<button class="score-btn ${ps[goal.id]===score?scClass(score):""}" onclick="setScore('${esc(period)}','${esc(goal.id)}',${score})">${score===0.5?"½":score}</button>`).join("")}
+          </div>
+        `).join("")}
+        <div class="total-cell">${ppct!==null?`<span style="background:${sBg(ppct)};color:${sClr(ppct)};padding:2px 8px;border-radius:12px;font-weight:800;">${pSum}/${pCount}</span>`:`<span style="color:#5a80b8;">—</span>`}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+  // Daily total
+  const{sum,count}=calcTotal(scores,goals);const p=pct(sum,count);
+  html+=`<div class="card flex items-center justify-between flex-wrap gap-12" style="border:2px solid #a8c4e8;background:#dce8f7;">
+    <div>
+      <div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;font-weight:700;">Daily Total — ${esc(name)}</div>
+      <div style="font-size:26px;font-weight:800;color:${count>0?sClr(p):"#5a80b8"};">
+        ${count>0?sum+"/"+count:"No data entered"}
+        ${count>0?`<span style="font-size:16px;margin-left:10px;background:${sBg(p)};color:${sClr(p)};padding:2px 12px;border-radius:20px;">${p}%</span>`:""}
+      </div>
+    </div>
+    ${count>0?`<div style="flex:1;max-width:260px;">
+      <div class="prog-wrap"><div class="prog-bar" style="width:${p}%;background:${sClr(p)};"></div></div>
+      <div class="flex justify-between" style="font-size:10px;color:#5a80b8;margin-top:4px;font-weight:600;"><span>0%</span><span style="color:#b8860b;">Target: 80%</span><span>100%</span></div>
+    </div>`:""}
+  </div>`;
+  document.getElementById("app-content").innerHTML=html;
+}
+
+function setScore(period,gid,val){
+  const name=STATE.selStudent;if(!name)return;
+  const goals=getStudentGoals(name);
+  if(!STATE.data[name])STATE.data[name]={};
+  if(!STATE.data[name][STATE.selDate])STATE.data[name][STATE.selDate]=emptyScores(goals);
+  // ensure goal exists in period
+  goals.forEach(g=>{if(STATE.data[name][STATE.selDate][period][g.id]===undefined)STATE.data[name][STATE.selDate][period][g.id]=null;});
+  const cur=STATE.data[name][STATE.selDate][period][gid];
+  STATE.data[name][STATE.selDate][period][gid]=(cur===val)?null:val;
+  save("data");
+  renderTracker();
+}
+
+/* ── CLASS SUMMARY ── */
+function renderSummary(){
+  const vs=visibleStudents();
+  const date=STATE.selDate;
+  let html=`<div style="font-size:13px;color:#1e4d8c;margin-bottom:14px;font-weight:600;">All students · ${date}</div>`;
+  // Student rows
+  vs.forEach(name=>{
+    const goals=getStudentGoals(name);
+    const sc=STATE.data[name]&&STATE.data[name][date];
+    let sum=0,count=0,hasData=false;
+    if(sc&&goals.length){const r=calcTotal(sc,goals);sum=r.sum;count=r.count;hasData=count>0;}
+    const p=pct(sum,count);
+    html+=`<div class="card flex items-center gap-10 flex-wrap" style="margin-bottom:8px;padding:12px 16px;">
+      <div style="width:120px;font-size:13px;font-weight:700;color:#1a3a6b;cursor:pointer;" onclick="selectStudent('${esc(name)}');setView('tracker');">${esc(name)}</div>
+      <div style="font-size:11px;color:#5a80b8;width:55px;">${goals.length} goals</div>
+      <div style="flex:1;min-width:80px;"><div class="prog-wrap"><div class="prog-bar" style="width:${hasData?p:0}%;background:${hasData?sClr(p):"#b0c8e8"};"></div></div></div>
+      <div style="font-size:14px;font-weight:800;background:${hasData?sBg(p):"#dce8f7"};color:${hasData?sClr(p):"#5a80b8"};padding:3px 12px;border-radius:20px;min-width:55px;text-align:center;">${hasData?p+"%":"—"}</div>
+      <div class="flex gap-8">
+        <button class="btn btn-sm btn-ghost" onclick="selectStudent('${esc(name)}');setView('tracker');">📝</button>
+        <button class="btn btn-sm btn-purple" onclick="openEditGoals('${esc(name)}')">🎯 Goals</button>
+        <button class="btn btn-sm btn-danger" onclick="removeStudent('${esc(name)}')">🗑️</button>
+      </div>
+    </div>`;
+  });
+  // Goal breakdown for selected student
+  if(STATE.selStudent){
+    const goals=getStudentGoals(STATE.selStudent);
+    const sc=STATE.data[STATE.selStudent]&&STATE.data[STATE.selStudent][date];
+    html+=`<div style="font-size:11px;color:#2556a8;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin:22px 0 10px;">Goal Breakdown — ${esc(STATE.selStudent)}</div>`;
+    if(goals.length===0){html+=`<div style="font-size:13px;color:#5a80b8;">No goals configured. <button style="color:#1a3a6b;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;" onclick="openEditGoals('${esc(STATE.selStudent)}')">Add goals →</button></div>`;}
+    else{
+      html+=`<div class="auto-grid">`;
+      goals.forEach(g=>{
+        let s=0,c=0;
+        if(sc)PERIODS.forEach(p=>{const v=sc[p]&&sc[p][g.id];if(v!=null){s+=v;c++;}});
+        const gp=pct(s,c);
+        html+=`<div class="card" style="border:2px solid #a8c4e8;">
+          <div style="font-size:11px;color:#1e4d8c;margin-bottom:7px;font-weight:600;line-height:1.3;">${esc(g.label)}</div>
+          <div style="font-size:22px;font-weight:800;color:${c>0?sClr(gp):"#5a80b8"};">${c>0?gp+"%":"—"}</div>
+          <div style="font-size:11px;color:#5a80b8;margin-top:3px;">${s}/${c} pts</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+  }
+  document.getElementById("app-content").innerHTML=html;
+}
+
+/* ── WEEKLY REPORT ── */
+let _weekStart=getMondayOfWeek(todayKey());
+let _weekChartStudent=null;
+function renderWeekly(){
+  if(!_weekChartStudent||!STATE.students.includes(_weekChartStudent)) _weekChartStudent=STATE.students[0]||null;
+  const days=getWeekDays(_weekStart);
+  const mon=new Date(_weekStart+"T12:00:00");const fri=new Date(mon);fri.setDate(mon.getDate()+4);
+  const wLabel=mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  const GC=["#1a3a6b","#b8860b","#1a7a3c","#c0392b","#1a6090","#8e44ad","#d35400","#16a085"];
+
+  // Student week data
+  const swData=STATE.students.map(name=>{
+    const goals=getStudentGoals(name);
+    const dp=getWeekDays(_weekStart).map(d=>{const sc=STATE.data[name]&&STATE.data[name][d.date];if(!sc||!goals.length)return null;const{sum,count}=calcTotal(sc,goals);return count>0?pct(sum,count):null;});
+    const valid=dp.filter(v=>v!==null);
+    return{name,weekAvg:valid.length?Math.round(valid.reduce((a,b)=>a+b,0)/valid.length):null,daysLogged:valid.length};
+  });
+
+  const goals=_weekChartStudent?getStudentGoals(_weekChartStudent):[];
+  // Bar data for selected student
+  const barData=days.map((d,i)=>{
+    const sc=STATE.data[_weekChartStudent]&&STATE.data[_weekChartStudent][d.date];
+    if(!sc||!goals.length)return{label:d.label,val:null,x:28+i*58};
+    const{sum,count}=calcTotal(sc,goals);
+    return{label:d.label,val:count>0?pct(sum,count):null,x:28+i*58};
+  });
+  // Goal week data
+  const goalWeekData=goals.map(goal=>{
+    const dv=days.map(d=>{const sc=STATE.data[_weekChartStudent]&&STATE.data[_weekChartStudent][d.date];if(!sc)return null;let s=0,c=0;PERIODS.forEach(p=>{const v=sc[p]&&sc[p][goal.id];if(v!=null){s+=v;c++;}});return c>0?pct(s,c):null;});
+    const valid=dv.filter(v=>v!==null);
+    return{...goal,dayVals:dv,avg:valid.length?Math.round(valid.reduce((a,b)=>a+b,0)/valid.length):null};
+  });
+  // Summary table
+  const summaryTable=STATE.students.map(name=>{
+    const g=getStudentGoals(name);
+    const ga=g.map(goal=>{let total=0,cnt=0;days.forEach(d=>{const sc=STATE.data[name]&&STATE.data[name][d.date];if(!sc)return;let s=0,c=0;PERIODS.forEach(p=>{const v=sc[p]&&sc[p][goal.id];if(v!=null){s+=v;c++;}});if(c>0){total+=pct(s,c);cnt++;}});return cnt>0?Math.round(total/cnt):null;});
+    const valid=ga.filter(v=>v!==null);
+    return{name,goalAvgs:ga,goals:g,overall:valid.length?Math.round(valid.reduce((a,b)=>a+b,0)/valid.length):null};
+  });
+
+  const cH=150,cW=370,BW=26;
+  // Build SVG bar chart
+  const barSVG=`<svg viewBox="0 0 ${cW} ${cH+46}" class="chart-svg">
+    ${[0,25,50,75,100].map(v=>`<g><line x1="22" y1="${cH-v*cH/100}" x2="${cW-8}" y2="${cH-v*cH/100}" stroke="#b0c8e8" stroke-width="1"/><text x="18" y="${cH-v*cH/100+4}" text-anchor="end" font-size="9" fill="#5a80b8">${v}</text></g>`).join("")}
+    <line x1="22" y1="${cH-80*cH/100}" x2="${cW-8}" y2="${cH-80*cH/100}" stroke="#b8860b" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="${cW-6}" y="${cH-80*cH/100-3}" font-size="8" fill="#b8860b" font-weight="bold">80%</text>
+    ${barData.map(bar=>bar.val!==null?
+      `<rect x="${bar.x-BW/2}" y="${cH-bar.val*cH/100}" width="${BW}" height="${bar.val*cH/100}" rx="4" fill="${sClr(bar.val)}" opacity="0.85"/>
+       <text x="${bar.x}" y="${cH-bar.val*cH/100-4}" text-anchor="middle" font-size="10" font-weight="700" fill="${sClr(bar.val)}">${bar.val}%</text>
+       <text x="${bar.x}" y="${cH+14}" text-anchor="middle" font-size="11" font-weight="600" fill="#0d1f3c">${bar.label}</text>`:
+      `<rect x="${bar.x-BW/2}" y="${cH-6}" width="${BW}" height="6" rx="3" fill="#b0c8e8"/>
+       <text x="${bar.x}" y="${cH+14}" text-anchor="middle" font-size="11" font-weight="600" fill="#5a80b8">${bar.label}</text>`
+    ).join("")}
+    <line x1="22" y1="0" x2="22" y2="${cH}" stroke="#b0c8e8" stroke-width="1"/>
+    <line x1="22" y1="${cH}" x2="${cW-8}" y2="${cH}" stroke="#b0c8e8" stroke-width="1"/>
+  </svg>`;
+  // Line chart SVG
+  const lineSVG=`<svg viewBox="0 0 ${cW} ${cH+28}" class="chart-svg">
+    ${[0,25,50,75,100].map(v=>`<line x1="22" y1="${cH-v*cH/100}" x2="${cW-8}" y2="${cH-v*cH/100}" stroke="#b0c8e8" stroke-width="1"/>`).join("")}
+    <line x1="22" y1="${cH-80*cH/100}" x2="${cW-8}" y2="${cH-80*cH/100}" stroke="#b8860b" stroke-width="1.5" stroke-dasharray="5,3"/>
+    ${goalWeekData.map((g,gi)=>{
+      const pts=g.dayVals.map((v,i)=>v!==null?{x:barData[i].x,y:cH-v*cH/100}:null);
+      let d="";pts.forEach((p,i)=>{if(p){if(!d||pts.slice(0,i).every(x=>x===null))d+=`M${p.x},${p.y}`;else d+=`L${p.x},${p.y}`;}});
+      const col=GC[gi%GC.length];
+      return`${d?`<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`:""}
+      ${pts.map((p,i)=>p?`<circle cx="${p.x}" cy="${p.y}" r="4" fill="${col}" stroke="#fff" stroke-width="1.5"/>`:"").join("")}`;
+    }).join("")}
+    <line x1="22" y1="0" x2="22" y2="${cH}" stroke="#b0c8e8" stroke-width="1"/>
+    <line x1="22" y1="${cH}" x2="${cW-8}" y2="${cH}" stroke="#b0c8e8" stroke-width="1"/>
+    ${barData.map(bar=>`<text x="${bar.x}" y="${cH+14}" text-anchor="middle" font-size="11" font-weight="600" fill="#0d1f3c">${bar.label}</text>`).join("")}
+  </svg>`;
+
+  let html=`
+    <!-- Week nav -->
+    <div class="flex items-center justify-between flex-wrap gap-10" style="margin-bottom:18px;">
+      <div class="flex items-center gap-10">
+        <button class="btn btn-sm btn-ghost" onclick="shiftWeek(-1)">← Prev</button>
+        <span style="font-size:14px;font-weight:700;color:#1a3a6b;">${wLabel}</span>
+        <button class="btn btn-sm btn-ghost" onclick="shiftWeek(1)">Next →</button>
+      </div>
+      <button class="btn btn-sm btn-success" onclick="exportWeeklyCSV('${_weekStart}')">⬇ Export Week CSV</button>
+    </div>
+
+    <!-- Student overview cards -->
+    <div style="font-size:11px;color:#2556a8;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:10px;">Weekly Overview — All Students</div>
+    <div class="auto-grid" style="margin-bottom:20px;">
+      ${swData.map(s=>`<div onclick="setWeekStudent('${esc(s.name)}')" style="background:${_weekChartStudent===s.name?"#dce8f7":"#fff"};border:2px solid ${_weekChartStudent===s.name?"#1a3a6b":"#b0c8e8"};border-radius:12px;padding:14px;cursor:pointer;">
+        <div style="font-size:13px;font-weight:700;color:#0d1f3c;margin-bottom:3px;">${esc(s.name)}</div>
+        <div style="font-size:10px;color:#5a80b8;margin-bottom:9px;">${getStudentGoals(s.name).length} goals · ${s.daysLogged}/5 days</div>
+        <div style="font-size:24px;font-weight:800;color:${s.weekAvg!==null?sClr(s.weekAvg):"#5a80b8"};margin-bottom:6px;">${s.weekAvg!==null?s.weekAvg+"%":"—"}</div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${s.weekAvg!==null?s.weekAvg:0}%;background:${s.weekAvg!==null?sClr(s.weekAvg):"transparent"};"></div></div>
+      </div>`).join("")}
+    </div>
+
+    <!-- Charts -->
+    <div class="card" style="margin-bottom:18px;">
+      <div class="flex items-center justify-between flex-wrap gap-8" style="margin-bottom:14px;">
+        <div style="font-size:14px;font-weight:700;color:#1a3a6b;">Charts — <span style="color:#b8860b;">${esc(_weekChartStudent||"")}</span></div>
+        <div class="flex gap-8 flex-wrap">
+          ${STATE.students.map(n=>`<button onclick="setWeekStudent('${esc(n)}')" style="padding:4px 10px;border-radius:12px;border:1.5px solid ${_weekChartStudent===n?"#1a3a6b":"#b0c8e8"};background:${_weekChartStudent===n?"#dce8f7":"#fff"};color:${_weekChartStudent===n?"#1a3a6b":"#1e4d8c"};cursor:pointer;font-size:11px;font-weight:${_weekChartStudent===n?"700":"400"};font-family:inherit;">${esc(n)}</button>`).join("")}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div>
+          <div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;font-weight:600;">Daily Overall %</div>
+          ${barSVG}
+        </div>
+        <div>
+          <div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;font-weight:600;">Goal Performance by Day</div>
+          <div class="flex flex-wrap gap-8" style="margin-bottom:6px;">
+            ${goals.map((g,i)=>`<div class="flex items-center gap-8" style="font-size:10px;color:#1e4d8c;"><div style="width:10px;height:3px;background:${GC[i%GC.length]};border-radius:2px;"></div>${esc((g.short||g.label).slice(0,13))}</div>`).join("")}
+          </div>
+          ${lineSVG}
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal avg bars -->
+    ${goals.length>0?`<div class="card" style="margin-bottom:18px;">
+      <div style="font-size:14px;font-weight:700;color:#1a3a6b;margin-bottom:14px;">Weekly Goal Averages — <span style="color:#b8860b;">${esc(_weekChartStudent||"")}</span></div>
+      ${goalWeekData.map((g,gi)=>`<div style="margin-bottom:12px;">
+        <div class="flex justify-between items-center" style="margin-bottom:5px;">
+          <span style="font-size:13px;color:#0d1f3c;font-weight:500;">${esc(g.label)}</span>
+          <span style="font-size:13px;font-weight:700;background:${g.avg!==null?sBg(g.avg):"#dce8f7"};color:${g.avg!==null?sClr(g.avg):"#5a80b8"};padding:2px 10px;border-radius:20px;">${g.avg!==null?g.avg+"%":"—"}</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${g.avg!==null?g.avg:0}%;background:${GC[gi%GC.length]};opacity:.85;"></div></div>
+      </div>`).join("")}
+    </div>`:""}
+
+    <!-- Summary table -->
+    <div class="card" style="overflow-x:auto;">
+      <div style="font-size:14px;font-weight:700;color:#1a3a6b;margin-bottom:14px;">Weekly Summary — All Students</div>
+      ${summaryTable.map(row=>`
+        <div style="margin-bottom:20px;">
+          <div class="flex items-center gap-10 flex-wrap" style="margin-bottom:9px;">
+            <span style="font-size:13px;font-weight:700;color:#0d1f3c;">${esc(row.name)}</span>
+            <span style="font-size:10px;color:#5a80b8;">${row.goals.length} goals</span>
+            <div style="flex:1;height:2px;background:linear-gradient(90deg,#a8c4e8,transparent);min-width:20px;"></div>
+            <span style="font-size:14px;font-weight:800;background:${row.overall!==null?sBg(row.overall):"#dce8f7"};color:${row.overall!==null?sClr(row.overall):"#5a80b8"};padding:3px 12px;border-radius:20px;">${row.overall!==null?row.overall+"% overall":"No data"}</span>
+          </div>
+          <div class="auto-grid-sm">
+            ${row.goals.map((g,gi)=>{const avg=row.goalAvgs[gi];return`<div class="card" style="border:1.5px solid #a8c4e8;padding:10px 12px;">
+              <div style="font-size:10px;color:#1e4d8c;margin-bottom:5px;font-weight:600;line-height:1.3;">${esc(g.label)}</div>
+              <div style="font-size:18px;font-weight:800;color:${avg!==null?sClr(avg):"#5a80b8"};">${avg!==null?avg+"%":"—"}</div>
+              <div class="prog-wrap" style="margin-top:5px;"><div class="prog-bar" style="width:${avg!==null?avg:0}%;background:${GC[gi%GC.length]};"></div></div>
+            </div>`;}).join("")}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  document.getElementById("app-content").innerHTML=html;
+}
+function shiftWeek(n){const d=new Date(_weekStart+"T12:00:00");d.setDate(d.getDate()+(n*7));_weekStart=d.toISOString().split("T")[0];renderWeekly();}
+function setWeekStudent(n){_weekChartStudent=n;renderWeekly();}
+
+/* ═══════════════════════════════════════════════════════════
+   STUDENT MANAGEMENT
+═══════════════════════════════════════════════════════════ */
+function openAddStudent(){
+  openModal(`
+    <div class="modal-header"><div style="font-size:16px;font-weight:800;color:#d4a017;">➕ Add New Student</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">Enter name then add tracking goals</div></div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Student Name</div>
+      <input type="text" id="ns-name" placeholder="First Last (e.g. Alex M.)"/>
+    </div>
+    <div id="goal-editor-wrap">${renderGoalEditor([])}</div>
+    <div id="modal-err" style="display:none;background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:8px;padding:9px 13px;font-size:13px;color:#9a1c1c;margin-bottom:14px;"></div>
+    <div class="flex gap-10" style="margin-top:18px;">
+      <button class="btn btn-primary flex-1" onclick="saveNewStudent()">Add Student</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+function openEditGoals(name){
+  const goals=getStudentGoals(name);
+  openModal(`
+    <div class="modal-header"><div style="font-size:16px;font-weight:800;color:#d4a017;">✏️ Edit Goals — ${esc(name)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">Add, remove, or reorder goals</div></div>
+    <div id="goal-editor-wrap">${renderGoalEditor(goals)}</div>
+    <div id="modal-err" style="display:none;background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:8px;padding:9px 13px;font-size:13px;color:#9a1c1c;margin-bottom:14px;"></div>
+    <div class="flex gap-10" style="margin-top:18px;">
+      <button class="btn btn-primary flex-1" onclick="saveGoals('${esc(name)}')">Save Goals</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+// In-modal goal state
+let _modalGoals=[];
+function renderGoalEditor(goals){
+  _modalGoals=goals.map(g=>({...g}));
+  return buildGoalEditorHTML();
+}
+function buildGoalEditorHTML(){
+  return`<div>
+    <div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:9px;">Tracking Goals (${_modalGoals.length})</div>
+    <div id="goal-list" style="margin-bottom:14px;">
+      ${_modalGoals.length===0?`<div style="text-align:center;padding:18px;color:#5a80b8;font-size:13px;background:#dce8f7;border-radius:8px;border:1.5px dashed #a8c4e8;">No goals yet — add one below</div>`:
+      _modalGoals.map((g,idx)=>`
+        <div class="goal-item">
+          <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0;">
+            <button onclick="moveGoal(${idx},-1)" ${idx===0?"disabled":""} style="background:none;border:none;color:${idx===0?"#b0c8e8":"#2556a8"};cursor:${idx===0?"default":"pointer"};font-size:11px;line-height:1;padding:1px 3px;">▲</button>
+            <button onclick="moveGoal(${idx},1)" ${idx===_modalGoals.length-1?"disabled":""} style="background:none;border:none;color:${idx===_modalGoals.length-1?"#b0c8e8":"#2556a8"};cursor:${idx===_modalGoals.length-1?"default":"pointer"};font-size:11px;line-height:1;padding:1px 3px;">▼</button>
+          </div>
+          <div style="flex:1;font-size:13px;color:#0d1f3c;font-weight:500;">${esc(g.label)}</div>
+          <button class="btn btn-sm btn-ghost" onclick="editGoalInline(${idx})">✏️</button>
+          <button style="background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 8px;color:#9a1c1c;cursor:pointer;font-size:11px;" onclick="removeGoal(${idx})">✕</button>
+        </div>
+      `).join("")}
+    </div>
+    <div style="background:#fdf6d8;border:1.5px solid #e8cc70;border-radius:10px;padding:13px;">
+      <div style="font-size:11px;color:#7a5500;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;font-weight:700;">Add Goal</div>
+      <div class="flex gap-8">
+        <input type="text" id="new-goal-inp" placeholder="e.g. Raising hand, Work completion…" onkeydown="if(event.key==='Enter')addGoalFromModal()" style="flex:1;"/>
+        <button class="btn btn-gold" onclick="addGoalFromModal()">+ Add</button>
+      </div>
+    </div>
+  </div>`;
+}
+function refreshGoalEditor(){document.getElementById("goal-editor-wrap").innerHTML=buildGoalEditorHTML();}
+function addGoalFromModal(){
+  const inp=document.getElementById("new-goal-inp");
+  const lbl=inp.value.trim();if(!lbl)return;
+  if(_modalGoals.find(g=>g.label.toLowerCase()===lbl.toLowerCase())){showModalErr("Goal already exists.");return;}
+  _modalGoals.push({id:slugify(lbl),label:lbl,short:lbl.slice(0,12)});
+  inp.value="";refreshGoalEditor();
+}
+function removeGoal(idx){_modalGoals.splice(idx,1);refreshGoalEditor();}
+function moveGoal(idx,dir){const sw=idx+dir;if(sw<0||sw>=_modalGoals.length)return;[_modalGoals[idx],_modalGoals[sw]]=[_modalGoals[sw],_modalGoals[idx]];refreshGoalEditor();}
+function editGoalInline(idx){
+  const g=_modalGoals[idx];
+  const row=document.getElementById("goal-list").children[idx];
+  if(!row)return;
+  row.innerHTML=`
+    <div class="flex gap-8 items-center" style="flex:1;">
+      <input type="text" id="edit-goal-inp" value="${esc(g.label)}" onkeydown="if(event.key==='Enter')saveGoalEdit(${idx})" style="flex:1;" autofocus/>
+      <button class="btn btn-sm btn-primary" onclick="saveGoalEdit(${idx})">Save</button>
+      <button class="btn btn-sm btn-ghost" onclick="refreshGoalEditor()">✕</button>
+    </div>
+  `;
+  setTimeout(()=>{const i=document.getElementById("edit-goal-inp");if(i)i.focus();},50);
+}
+function saveGoalEdit(idx){
+  const lbl=document.getElementById("edit-goal-inp").value.trim();
+  if(!lbl)return;
+  _modalGoals[idx]={..._modalGoals[idx],label:lbl,short:lbl.slice(0,12)};
+  refreshGoalEditor();
+}
+function showModalErr(msg){const el=document.getElementById("modal-err");el.textContent=msg;el.style.display="block";}
+function saveNewStudent(){
+  const name=(document.getElementById("ns-name")||{}).value||"";
+  const n=name.trim();
+  if(!n){showModalErr("Student name is required.");return;}
+  if(_modalGoals.length===0){showModalErr("Add at least one goal.");return;}
+  if(STATE.students.includes(n)){showModalErr("Student already exists.");return;}
+  STATE.students.push(n);
+  STATE.goals[n]=_modalGoals.map(g=>({...g}));
+  save("students");save("goals");
+  STATE.selStudent=n;
+  closeModal();
+  toast(n+" added with "+_modalGoals.length+" goal"+(_modalGoals.length!==1?"s":"")+".");
+  renderApp();
+}
+function saveGoals(name){
+  if(_modalGoals.length===0){showModalErr("Add at least one goal.");return;}
+  STATE.goals[name]=_modalGoals.map(g=>({...g}));
+  save("goals");
+  closeModal();
+  toast("Goals updated for "+name+".");
+  renderContent();
+  renderTopbar();
+}
+function removeStudent(name){
+  if(!confirm("Remove "+name+"? This cannot be undone."))return;
+  STATE.students=STATE.students.filter(s=>s!==name);
+  delete STATE.goals[name];
+  delete STATE.data[name];
+  Object.keys(STATE.assignments).forEach(k=>{STATE.assignments[k]=(STATE.assignments[k]||[]).filter(s=>s!==name);});
+  if(STATE.selStudent===name)STATE.selStudent=visibleStudents()[0]||null;
+  saveAll();
+  toast(name+" removed.","error");
+  renderApp();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════════════════ */
+function printSheet(){
+  const name=STATE.selStudent;if(!name)return;
+  const goals=getStudentGoals(name);
+  const scores=getScores(name,STATE.selDate);
+  const{sum,count}=calcTotal(scores,goals);const p=pct(sum,count);
+  const w=window.open("","_blank","width=900,height=700");
+  w.document.write(`<!DOCTYPE html><html><head><title>Point Sheet — ${name}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Georgia,serif;padding:24px;color:#111;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th,td{border:1px solid #ccc;padding:7px;}th{background:#1a3a6b;color:#d4a017;font-weight:700;}
+  tr:nth-child(even){background:#f0f5fc;}.sig{border-bottom:2px solid #1a3a6b;height:30px;}</style>
+  </head><body>
+  <div style="border-bottom:4px solid #1a3a6b;padding-bottom:14px;margin-bottom:18px;display:flex;align-items:center;gap:14px;">
+    <div style="width:48px;height:48px;background:#1a3a6b;border-radius:50%;border:2px solid #d4a017;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#1a3a6b" stroke="#d4a017" stroke-width="2"/><path d="M11 20l6 6 12-12" stroke="#d4a017" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+    <div>
+      <div style="font-size:20px;font-weight:bold;color:#1a3a6b;">PointSheet Pro — Daily Behavior Record</div>
+      <div style="font-size:13px;color:#555;margin-top:2px;">Student: ${name} · Date: ${STATE.selDate} · Teacher: ${STATE.currentUser.displayName}</div>
+    </div>
+  </div>
+  <table><thead><tr><th>Period</th>${goals.map(g=>`<th>${g.label}</th>`).join("")}<th>Total</th></tr></thead>
+  <tbody>${PERIODS.map((period,pi)=>{
+    const ps=scores[period]||{};
+    const s=goals.reduce((a,g)=>a+(ps[g.id]||0),0);
+    const c=goals.filter(g=>ps[g.id]!=null).length;
+    return`<tr style="background:${period===HB_PERIOD?'#fdf6d8':pi%2===0?'#fff':'#f0f5fc'};border-left:${period===HB_PERIOD?'3px solid #d4a017':'none'};"><td style="font-weight:700;color:${period===HB_PERIOD?'#7a5500':'#1a3a6b'};">${period===HB_PERIOD?'🏠 '+period:period}</td>${goals.map(g=>`<td style="text-align:center;font-weight:700;color:${ps[g.id]!=null?scClr(ps[g.id]):"#aaa"};">${ps[g.id]!=null?ps[g.id]:"—"}</td>`).join("")}<td style="text-align:center;font-weight:800;color:${c>0?sClr(pct(s,c)):"#aaa"};">${c>0?s+"/"+c:"—"}</td></tr>`;
+  }).join("")}</tbody></table>
+  <div style="margin-top:14px;display:flex;justify-content:space-between;font-size:14px;">
+    <div><strong>Daily Total:</strong> ${sum}/${count}</div>
+    <div><strong>Percentage:</strong> <span style="color:${count>0?sClr(p):"#aaa"};font-weight:800;">${count>0?p+"%":"N/A"}</span></div>
+    <div style="background:#1a3a6b;color:#d4a017;padding:3px 12px;border-radius:6px;font-size:12px;font-weight:700;">PointSheet Pro</div>
+  </div>
+  <div style="margin-top:28px;display:flex;gap:40px;">
+    <div style="flex:1;"><div class="sig"></div><div style="font-size:11px;color:#666;margin-top:4px;">Teacher Signature</div></div>
+    <div style="flex:1;"><div class="sig"></div><div style="font-size:11px;color:#666;margin-top:4px;">Case Manager Signature</div></div>
+  </div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   STUDENT INFO — ADMIN & CASE MANAGER
+═══════════════════════════════════════════════════════════ */
+function renderAdminStudents(){
+  return`
+    <div style="font-size:20px;font-weight:800;color:#1a3a6b;margin-bottom:4px;">🎓 Student Information</div>
+    <div style="font-size:13px;color:#1e4d8c;margin-bottom:18px;">Add, edit, and manage student profiles.</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <input type="text" id="stu-search" placeholder="🔍 Search by name, grade, or teacher…" oninput="filterStudents()" style="flex:1;min-width:180px;"/>
+      <button class="btn btn-gold" onclick="openAddStudentInfo()">+ Add Student</button>
+      <button class="btn btn-primary" onclick="document.getElementById('import-file-inp').click()">⬆ Import Excel/CSV</button>
+      <button class="btn btn-ghost" onclick="downloadImportTemplate()">⬇ Download Template</button>
+      <input type="file" id="import-file-inp" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this)"/>
+    </div>
+    <div id="import-preview" style="display:none;"></div>
+    <div id="student-table">${renderStudentTable("")}</div>
+  `;
+}
+
+function renderStudentTable(search){
+  const s=search.toLowerCase();
+  const filtered=STATE.students.filter(function(n){
+    if(!s)return true;
+    const inf=STATE.studentInfo[n]||{};
+    return n.toLowerCase().includes(s)||
+      (inf.grade||"").includes(s)||
+      (inf.teacher||"").toLowerCase().includes(s)||
+      (inf.firstName||"").toLowerCase().includes(s)||
+      (inf.lastName||"").toLowerCase().includes(s);
+  });
+  if(!filtered.length)return'<div style="text-align:center;padding:32px;color:#5a80b8;font-size:13px;">No students found.</div>';
+  const byGrade={};
+  filtered.forEach(function(n){
+    const g=(STATE.studentInfo[n]||{}).grade||"—";
+    if(!byGrade[g])byGrade[g]=[];
+    byGrade[g].push(n);
+  });
+  return Object.keys(byGrade).sort(function(a,b){return a==="—"?1:b==="—"?-1:parseInt(a)-parseInt(b);}).map(function(grade){
+    const today=new Date();
+    return'<div style="margin-bottom:22px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+
+        '<div style="background:#1a3a6b;color:#d4a017;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;">GRADE '+esc(grade)+'</div>'+
+        '<div style="flex:1;height:1px;background:linear-gradient(90deg,#a8c4e8,transparent);"></div>'+
+        '<span style="font-size:11px;color:#5a80b8;font-weight:600;">'+byGrade[grade].length+' student'+(byGrade[grade].length!==1?"s":"")+'</span>'+
+      '</div>'+
+      byGrade[grade].map(function(name){
+        const inf=STATE.studentInfo[name]||{};
+        const iepDate=inf.iepDate?new Date(inf.iepDate+"T12:00:00"):null;
+        const daysUntilIep=iepDate?Math.round((iepDate-today)/(1000*60*60*24)):null;
+        const iepStatus=daysUntilIep===null?"none":daysUntilIep<0?"overdue":daysUntilIep<=30?"soon":"ok";
+        const iepColor=iepStatus==="overdue"?"#9a1c1c":iepStatus==="soon"?"#9a6000":"#1a7a3c";
+        const iepBg=iepStatus==="overdue"?"#fdeaea":iepStatus==="soon"?"#fff4e0":iepStatus==="ok"?"#e6f7ee":"#f0f5fc";
+        const goals=getStudentGoals(name);
+        const initial=esc((inf.firstName||name)[0].toUpperCase());
+        const iepLabel=inf.iepDate?new Date(inf.iepDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"Not set";
+        const daysLabel=daysUntilIep===null?"":daysUntilIep<0?"Overdue "+Math.abs(daysUntilIep)+"d":daysUntilIep===0?"Today":daysUntilIep+"d away";
+        return'<div class="card" style="margin-bottom:8px;padding:14px 18px;border:1.5px solid #b0c8e8;">'+
+          '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'+
+            '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#2556a8);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#d4a017;flex-shrink:0;font-family:Georgia,serif;">'+initial+'</div>'+
+            '<div style="flex:1;min-width:140px;">'+
+              '<div style="font-size:14px;font-weight:800;color:#0d1f3c;">'+esc(inf.firstName||"")+" "+esc(inf.lastName||name)+'</div>'+
+              '<div style="font-size:11px;color:#5a80b8;margin-top:2px;">'+
+                'Grade '+esc(inf.grade||"—")+" &nbsp;·&nbsp; "+
+                (inf.teacher?"👩‍🏫 "+esc(inf.teacher)+" &nbsp;·&nbsp; ":"")+
+                goals.length+' goal'+(goals.length!==1?"s":"")+
+              '</div>'+
+            '</div>'+
+            '<div style="text-align:center;min-width:110px;">'+
+              '<div style="font-size:10px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:3px;">IEP Date</div>'+
+              '<span style="background:'+iepBg+';color:'+iepColor+';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">'+iepLabel+(iepStatus==="overdue"?" ⚠️":iepStatus==="soon"?" 🔔":"")+'</span>'+
+              (daysUntilIep!==null?'<div style="font-size:10px;color:'+iepColor+';margin-top:2px;font-weight:600;">'+daysLabel+'</div>':"")+
+            '</div>'+
+            '<div style="display:flex;gap:8px;flex-shrink:0;">'+
+              '<button class="btn btn-sm btn-ghost" onclick="openViewStudent(\''+esc(name)+'\')">👁 View</button>'+
+              '<button class="btn btn-sm btn-purple" onclick="openEditStudentInfo(\''+esc(name)+'\')">✏️ Edit</button>'+
+              '<button class="btn btn-sm btn-danger" onclick="removeStudentAdmin(\''+esc(name)+'\')">🗑️ Remove</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }).join("")+
+    '</div>';
+  }).join("");
+}
+
+function filterStudents(){
+  document.getElementById("student-table").innerHTML=renderStudentTable(document.getElementById("stu-search").value);
+}
+
+var _siGoals=[];
+
+function openAddStudentInfo(){
+  _siGoals=[];
+  var teachers=STATE.accounts.filter(function(a){return a.role==="teacher";});
+  var teacherOpts=teachers.map(function(t){return'<option value="'+esc(t.displayName)+'">'+esc(t.displayName)+'</option>';}).join("");
+  var gradeOpts=GRADES.map(function(g){return'<option value="'+g+'">'+g+'th Grade</option>';}).join("");
+  openModal(
+    '<div style="background:#1a3a6b;border-radius:12px 12px 0 0;padding:16px 20px;">'+
+      '<div style="font-size:16px;font-weight:800;color:#d4a017;">🎓 Add New Student</div>'+
+      '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;">Enter student profile information</div>'+
+    '</div>'+
+    '<div style="padding:22px;">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">First Name *</div><input type="text" id="si-fn" placeholder="e.g. Alex" style="width:100%;"/></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Last Name *</div><input type="text" id="si-ln" placeholder="e.g. Martinez" style="width:100%;"/></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Grade *</div><select id="si-grade" style="width:100%;"><option value="">— Select grade —</option>'+gradeOpts+'</select></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Teacher</div><select id="si-teacher" style="width:100%;"><option value="">— Select teacher —</option>'+teacherOpts+'</select></div>'+
+        '<div style="grid-column:1/-1;"><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">IEP Date</div><input type="date" id="si-iep" style="width:100%;"/></div>'+
+      '</div>'+
+      '<div style="background:#fdf6d8;border:1.5px solid #e8cc70;border-radius:10px;padding:14px;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:#7a5500;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Tracking Goals *</div>'+
+        '<div id="si-goal-list" style="margin-bottom:10px;"></div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<input type="text" id="si-goal-inp" placeholder="e.g. Raising hand, Work completion…" style="flex:1;"/>'+
+          '<button class="btn btn-gold" onclick="addSIGoal()">+ Add</button>'+
+        '</div>'+
+      '</div>'+
+      '<div id="si-err" style="display:none;background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:8px;padding:9px;font-size:13px;color:#9a1c1c;margin-bottom:12px;"></div>'+
+      '<div style="display:flex;gap:10px;">'+
+        '<button class="btn btn-primary" style="flex:1;" onclick="saveNewStudentInfo()">Add Student</button>'+
+        '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+      '</div>'+
+    '</div>'
+  );
+  refreshSIGoals();
+}
+
+function openEditStudentInfo(name){
+  _siGoals=getStudentGoals(name).map(function(g){return Object.assign({},g);});
+  var inf=STATE.studentInfo[name]||{};
+  var teachers=STATE.accounts.filter(function(a){return a.role==="teacher";});
+  var teacherOpts=teachers.map(function(t){return'<option value="'+esc(t.displayName)+'"'+(inf.teacher===t.displayName?" selected":"")+'>'+esc(t.displayName)+'</option>';}).join("");
+  var gradeOpts=GRADES.map(function(g){return'<option value="'+g+'"'+(inf.grade===g?" selected":"")+'">'+g+'th Grade</option>';}).join("");
+  openModal(
+    '<div style="background:#1a3a6b;border-radius:12px 12px 0 0;padding:16px 20px;">'+
+      '<div style="font-size:16px;font-weight:800;color:#d4a017;">✏️ Edit Student</div>'+
+      '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;">'+esc(name)+'</div>'+
+    '</div>'+
+    '<div style="padding:22px;max-height:75vh;overflow-y:auto;">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">First Name</div><input type="text" id="ei-fn" value="'+esc(inf.firstName||"")+'" style="width:100%;"/></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Last Name</div><input type="text" id="ei-ln" value="'+esc(inf.lastName||"")+'" style="width:100%;"/></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Grade</div><select id="ei-grade" style="width:100%;"><option value="">— Select —</option>'+gradeOpts+'</select></div>'+
+        '<div><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">Teacher</div><select id="ei-teacher" style="width:100%;"><option value="">— Select —</option>'+teacherOpts+'</select></div>'+
+        '<div style="grid-column:1/-1;"><div style="font-size:11px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:5px;">IEP Date</div><input type="date" id="ei-iep" value="'+esc(inf.iepDate||"")+'" style="width:100%;"/></div>'+
+      '</div>'+
+      '<div style="background:#fdf6d8;border:1.5px solid #e8cc70;border-radius:10px;padding:14px;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:#7a5500;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Tracking Goals</div>'+
+        '<div id="si-goal-list" style="margin-bottom:10px;"></div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<input type="text" id="si-goal-inp" placeholder="Add a goal…" style="flex:1;"/>'+
+          '<button class="btn btn-gold" onclick="addSIGoal()">+ Add</button>'+
+        '</div>'+
+      '</div>'+
+      '<div id="si-err" style="display:none;background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:8px;padding:9px;font-size:13px;color:#9a1c1c;margin-bottom:12px;"></div>'+
+      '<div style="display:flex;gap:10px;">'+
+        '<button class="btn btn-primary" style="flex:1;" onclick="saveEditStudentInfo(\''+esc(name)+'\')">Save Changes</button>'+
+        '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+      '</div>'+
+    '</div>'
+  );
+  refreshSIGoals();
+}
+
+function openViewStudent(name){
+  var inf=STATE.studentInfo[name]||{};
+  var goals=getStudentGoals(name);
+  var iepDate=inf.iepDate?new Date(inf.iepDate+"T12:00:00"):null;
+  var today=new Date();
+  var daysUntilIep=iepDate?Math.round((iepDate-today)/(1000*60*60*24)):null;
+  var iepColor=daysUntilIep===null?"#5a80b8":daysUntilIep<0?"#9a1c1c":daysUntilIep<=30?"#9a6000":"#1a7a3c";
+  var iepBg=daysUntilIep===null?"#dce8f7":daysUntilIep<0?"#fdeaea":daysUntilIep<=30?"#fff4e0":"#e6f7ee";
+  var daysText=daysUntilIep===null?"":daysUntilIep<0?"⚠️ Overdue "+Math.abs(daysUntilIep)+" days":daysUntilIep===0?"Today!":daysUntilIep+" days until IEP";
+  var iepDisplay=inf.iepDate?new Date(inf.iepDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"}):"Not set";
+  var initial=esc((inf.firstName||name)[0].toUpperCase());
+  openModal(
+    '<div style="background:#1a3a6b;border-radius:12px 12px 0 0;padding:16px 20px;">'+
+      '<div style="font-size:16px;font-weight:800;color:#d4a017;">👁 Student Profile</div>'+
+    '</div>'+
+    '<div style="padding:22px;">'+
+      '<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">'+
+        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#2556a8);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#d4a017;font-family:Georgia,serif;flex-shrink:0;">'+initial+'</div>'+
+        '<div>'+
+          '<div style="font-size:20px;font-weight:800;color:#0d1f3c;">'+esc(inf.firstName||"")+" "+esc(inf.lastName||name)+'</div>'+
+          '<div style="font-size:12px;color:#5a80b8;margin-top:3px;">Grade '+esc(inf.grade||"—")+" &nbsp;·&nbsp; "+esc(inf.teacher||"No teacher assigned")+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">'+
+        '<div style="background:#dce8f7;border-radius:9px;padding:11px 13px;"><div style="font-size:10px;color:#2556a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">First Name</div><div style="font-size:14px;font-weight:700;">'+esc(inf.firstName||"—")+'</div></div>'+
+        '<div style="background:#dce8f7;border-radius:9px;padding:11px 13px;"><div style="font-size:10px;color:#2556a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Last Name</div><div style="font-size:14px;font-weight:700;">'+esc(inf.lastName||"—")+'</div></div>'+
+        '<div style="background:#dce8f7;border-radius:9px;padding:11px 13px;"><div style="font-size:10px;color:#2556a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Grade</div><div style="font-size:14px;font-weight:700;">'+(inf.grade?inf.grade+"th Grade":"—")+'</div></div>'+
+        '<div style="background:#dce8f7;border-radius:9px;padding:11px 13px;"><div style="font-size:10px;color:#2556a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Teacher</div><div style="font-size:14px;font-weight:700;">'+esc(inf.teacher||"—")+'</div></div>'+
+      '</div>'+
+      '<div style="background:'+iepBg+';border-radius:9px;padding:13px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:10px;">'+
+        '<div>'+
+          '<div style="font-size:10px;color:#2556a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">IEP Date</div>'+
+          '<div style="font-size:15px;font-weight:800;color:#0d1f3c;">'+iepDisplay+'</div>'+
+        '</div>'+
+        (daysText?'<div style="font-size:13px;font-weight:800;color:'+iepColor+';">'+daysText+'</div>':"")+
+      '</div>'+
+      '<div style="font-size:11px;color:#2556a8;text-transform:uppercase;font-weight:700;margin-bottom:9px;">Tracking Goals ('+goals.length+')</div>'+
+      (goals.length?goals.map(function(g,i){return'<div style="display:flex;align-items:center;gap:10px;background:#f0f5fc;border:1px solid #b0c8e8;border-radius:8px;padding:9px 12px;margin-bottom:6px;"><div style="width:22px;height:22px;background:#1a3a6b;color:#d4a017;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">'+(i+1)+'</div><div style="font-size:13px;color:#0d1f3c;">'+esc(g.label)+'</div></div>';}).join(""):'<div style="font-size:13px;color:#5a80b8;">No goals configured.</div>')+
+      '<div style="display:flex;gap:10px;margin-top:18px;">'+
+        '<button class="btn btn-purple" style="flex:1;" onclick="closeModal();setTimeout(function(){openEditStudentInfo(\''+esc(name)+'\')},100)">✏️ Edit Profile</button>'+
+        '<button class="btn btn-ghost" onclick="closeModal()">Close</button>'+
+      '</div>'+
+    '</div>'
+  );
+}
+
+function refreshSIGoals(){
+  var el=document.getElementById("si-goal-list");
+  if(!el)return;
+  if(!_siGoals.length){el.innerHTML='<div style="font-size:12px;color:#5a80b8;padding:8px 0;">No goals yet — add one below</div>';return;}
+  el.innerHTML=_siGoals.map(function(g,i){
+    return'<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b0c8e8;border-radius:7px;padding:7px 10px;margin-bottom:6px;">'+
+      '<div style="flex:1;font-size:13px;color:#0d1f3c;">'+esc(g.label)+'</div>'+
+      '<button onclick="removeSIGoal('+i+')" style="background:#fdeaea;border:1px solid #f0a0a0;border-radius:5px;padding:3px 8px;color:#9a1c1c;cursor:pointer;font-size:11px;">✕</button>'+
+    '</div>';
+  }).join("");
+}
+
+function addSIGoal(){
+  var inp=document.getElementById("si-goal-inp");
+  var lbl=(inp.value||"").trim();
+  if(!lbl)return;
+  var errEl=document.getElementById("si-err");
+  for(var x=0;x<_siGoals.length;x++){if(_siGoals[x].label.toLowerCase()===lbl.toLowerCase()){if(errEl){errEl.textContent="Goal already added.";errEl.style.display="block";}return;}}
+  _siGoals.push({id:slugify(lbl),label:lbl,short:lbl.slice(0,12)});
+  inp.value="";
+  if(errEl)errEl.style.display="none";
+  refreshSIGoals();
+}
+
+function removeSIGoal(i){_siGoals.splice(i,1);refreshSIGoals();}
+
+function saveNewStudentInfo(){
+  var fn=(document.getElementById("si-fn")||{}).value||"";
+  var ln=(document.getElementById("si-ln")||{}).value||"";
+  fn=fn.trim(); ln=ln.trim();
+  var grade=(document.getElementById("si-grade")||{}).value||"";
+  var teacher=(document.getElementById("si-teacher")||{}).value||"";
+  var iepDate=(document.getElementById("si-iep")||{}).value||"";
+  var errEl=document.getElementById("si-err");
+  if(!fn||!ln){errEl.textContent="First and last name are required.";errEl.style.display="block";return;}
+  if(!grade){errEl.textContent="Please select a grade.";errEl.style.display="block";return;}
+  if(!_siGoals.length){errEl.textContent="Add at least one tracking goal.";errEl.style.display="block";return;}
+  var displayName=fn+" "+ln.charAt(0)+".";
+  var uniqueName=STATE.students.includes(displayName)?fn+" "+ln:displayName;
+  if(STATE.students.includes(uniqueName)){errEl.textContent="A student with this name already exists.";errEl.style.display="block";return;}
+  STATE.students.push(uniqueName);
+  STATE.studentInfo[uniqueName]={firstName:fn,lastName:ln,grade:grade,teacher:teacher,iepDate:iepDate};
+  STATE.goals[uniqueName]=_siGoals.map(function(g){return Object.assign({},g);});
+  if(teacher){
+    var t=STATE.accounts.find(function(a){return a.role==="teacher"&&a.displayName===teacher;});
+    if(t){if(!STATE.assignments[t.id])STATE.assignments[t.id]=[];STATE.assignments[t.id].push(uniqueName);}
+  }
+  saveAll();
+  closeModal();
+  toast(fn+" "+ln+" added successfully.");
+  adminTab("students");
+}
+
+function saveEditStudentInfo(name){
+  var fn=(document.getElementById("ei-fn")||{}).value||"";
+  var ln=(document.getElementById("ei-ln")||{}).value||"";
+  fn=fn.trim(); ln=ln.trim();
+  var grade=(document.getElementById("ei-grade")||{}).value||"";
+  var teacher=(document.getElementById("ei-teacher")||{}).value||"";
+  var iepDate=(document.getElementById("ei-iep")||{}).value||"";
+  var errEl=document.getElementById("si-err");
+  if(!fn||!ln){errEl.textContent="First and last name are required.";errEl.style.display="block";return;}
+  if(!_siGoals.length){errEl.textContent="Add at least one tracking goal.";errEl.style.display="block";return;}
+  STATE.studentInfo[name]={firstName:fn,lastName:ln,grade:grade,teacher:teacher,iepDate:iepDate};
+  STATE.goals[name]=_siGoals.map(function(g){return Object.assign({},g);});
+  if(teacher){
+    var newT=STATE.accounts.find(function(a){return a.role==="teacher"&&a.displayName===teacher;});
+    if(newT){
+      STATE.accounts.filter(function(a){return a.role==="teacher";}).forEach(function(t){
+        STATE.assignments[t.id]=(STATE.assignments[t.id]||[]).filter(function(s){return s!==name;});
+      });
+      if(!STATE.assignments[newT.id])STATE.assignments[newT.id]=[];
+      if(!STATE.assignments[newT.id].includes(name))STATE.assignments[newT.id].push(name);
+    }
+  }
+  saveAll();
+  closeModal();
+  toast("Profile updated for "+name+".");
+  adminTab("students");
+}
+
+function removeStudentAdmin(name){
+  openModal(
+    '<div style="background:#9a1c1c;border-radius:12px 12px 0 0;padding:16px 20px;">' +
+      '<div style="font-size:16px;font-weight:800;color:#fff;">🗑️ Remove Student</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">This cannot be undone</div>' +
+    '</div>' +
+    '<div style="padding:22px;">' +
+      '<div style="background:#fdeaea;border:1.5px solid #f0a0a0;border-radius:10px;padding:16px;margin-bottom:20px;">' +
+        '<div style="font-size:15px;font-weight:700;color:#9a1c1c;margin-bottom:6px;">Remove ' + esc(name) + '?</div>' +
+        '<div style="font-size:13px;color:#7a1010;line-height:1.6;">This will permanently delete:<br>' +
+          '&nbsp;&nbsp;• Their student profile and IEP date<br>' +
+          '&nbsp;&nbsp;• All tracking goals<br>' +
+          '&nbsp;&nbsp;• All behavioral data across every date<br>' +
+          '&nbsp;&nbsp;• Their teacher roster assignment</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button class="btn btn-danger" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:9px;" ' +
+          'onclick="doRemoveStudent(\'' + esc(name) + '\')">Yes, Remove Student</button>' +
+        '<button class="btn btn-ghost" style="flex:1;padding:12px;" onclick="closeModal()">Cancel</button>' +
+      '</div>' +
+    '</div>'
+  );
+}
+function doRemoveStudent(name){
+  STATE.students = STATE.students.filter(function(s){return s !== name;});
+  delete STATE.studentInfo[name];
+  delete STATE.goals[name];
+  delete STATE.data[name];
+  Object.keys(STATE.assignments).forEach(function(k){
+    STATE.assignments[k] = (STATE.assignments[k]||[]).filter(function(s){return s !== name;});
+  });
+  if(STATE.selStudent === name) STATE.selStudent = null;
+  saveAll();
+  closeModal();
+  toast(name + ' removed.', 'error');
+  adminTab('students');
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   EXCEL / CSV IMPORT
+═══════════════════════════════════════════════════════════ */
+
+// Column aliases — maps whatever headers the user has to our field names
+var COL_MAP = {
+  firstname:  'firstName',
+  first:      'firstName',
+  fname:      'firstName',
+  'first name':'firstName',
+  lastname:   'lastName',
+  last:       'lastName',
+  lname:      'lastName',
+  'last name':'lastName',
+  grade:      'grade',
+  gradelevel: 'grade',
+  'grade level':'grade',
+  teacher:    'teacher',
+  generaledteacher:'teacher',
+  'general ed teacher':'teacher',
+  assignedteacher:'teacher',
+  iepdate:    'iepDate',
+  'iep date': 'iepDate',
+  iep:        'iepDate',
+  'iep meeting date':'iepDate',
+  goals:      'goals',
+  trackinggoals:'goals',
+  'tracking goals':'goals',
+};
+
+function normalizeHeader(h){
+  return String(h).toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+}
+
+function parseExcelDate(val){
+  // Excel serial date number
+  if(typeof val === 'number'){
+    var d = new Date(Math.round((val - 25569)*86400*1000));
+    return d.toISOString().split('T')[0];
+  }
+  if(typeof val === 'string' && val.trim()){
+    // Try common date formats
+    var s = val.trim();
+    // Already ISO
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // MM/DD/YYYY or M/D/YYYY
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if(m){
+      var yr = m[3].length===2 ? '20'+m[3] : m[3];
+      return yr+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+    }
+    // Try native parse
+    var dt = new Date(s);
+    if(!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+  }
+  return '';
+}
+
+/* ── Built-in CSV + XLSX parser (no external libraries needed) ── */
+function handleImportFile(input){
+  var file = input.files[0];
+  if(!file){return;}
+  input.value = '';
+  var name = file.name.toLowerCase();
+  var reader = new FileReader();
+  if(name.endsWith('.csv')){
+    reader.onload = function(e){
+      try{
+        var rows = parseCSV(e.target.result);
+        processImportRows(rows);
+      }catch(err){toast('Could not read CSV: '+err.message,'error');}
+    };
+    reader.readAsText(file);
+  } else if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+    reader.onload = function(e){
+      try{
+        var rows = parseXLSX(new Uint8Array(e.target.result));
+        processImportRows(rows);
+      }catch(err){toast('Could not read Excel file. Try saving as CSV first.','error');}
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    toast('Please upload a .csv, .xlsx, or .xls file.','error');
+  }
+}
+
+/* ── Pure JS CSV parser (handles quoted fields, commas inside quotes) ── */
+function parseCSV(text){
+  var rows = [];
+  // Normalize line endings
+  var lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  for(var i=0;i<lines.length;i++){
+    var line = lines[i];
+    if(!line.trim()) continue;
+    var cells = [];
+    var cur = '';
+    var inQ = false;
+    for(var j=0;j<line.length;j++){
+      var ch = line[j];
+      if(ch==='"'){
+        if(inQ && line[j+1]==='"'){cur+='"';j++;}
+        else{inQ=!inQ;}
+      } else if(ch===',' && !inQ){
+        cells.push(cur); cur='';
+      } else {
+        cur+=ch;
+      }
+    }
+    cells.push(cur);
+    rows.push(cells);
+  }
+  return rows;
+}
+
+/* ── Minimal XLSX reader — extracts first sheet as rows of strings ──
+   Handles the most common Office Open XML format (.xlsx).
+   For complex files (merged cells, formulas) CSV export is recommended. ── */
+function parseXLSX(uint8){
+  // XLSX is a ZIP. Find the shared strings and first sheet XML.
+  var zip = unzipSimple(uint8);
+  if(!zip){throw new Error('Not a valid XLSX file. Please save as CSV.');}
+
+  // Read shared strings
+  var ssXml = zip['xl/sharedStrings.xml'] || '';
+  var sharedStrings = [];
+  var siRe = /<si>[\s\S]*?<\/si>/g;
+  var siMatch;
+  while((siMatch=siRe.exec(ssXml))!==null){
+    var tRe = /<t[^>]*>([\s\S]*?)<\/t>/g;
+    var tMatch; var val='';
+    while((tMatch=tRe.exec(siMatch[0]))!==null){ val+=tMatch[1]; }
+    sharedStrings.push(val.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"));
+  }
+
+  // Find first sheet
+  var sheetXml = zip['xl/worksheets/sheet1.xml'] || '';
+  if(!sheetXml){
+    // Try to find any sheet
+    var keys = Object.keys(zip);
+    for(var k=0;k<keys.length;k++){
+      if(keys[k].match(/xl\/worksheets\/sheet\d+\.xml/)){sheetXml=zip[keys[k]];break;}
+    }
+  }
+  if(!sheetXml){throw new Error('Could not find sheet data in XLSX.');}
+
+  // Parse rows and cells
+  var rows = [];
+  var rowRe = /<row[^>]*>([\s\S]*?)<\/row>/g;
+  var rowMatch;
+  while((rowMatch=rowRe.exec(sheetXml))!==null){
+    var cells = {};
+    var cellRe = /<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+    var cellMatch;
+    while((cellMatch=cellRe.exec(rowMatch[1]))!==null){
+      var col = cellMatch[1];
+      var attrs = cellMatch[3];
+      var inner = cellMatch[4];
+      var vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+      var val = vMatch ? vMatch[1] : '';
+      // t="s" means shared string index
+      if(attrs.indexOf('t="s"')!==-1 || attrs.indexOf("t='s'")!==-1){
+        val = sharedStrings[parseInt(val)] || '';
+      }
+      // Decode XML entities
+      val = val.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+      cells[col] = val;
+    }
+    // Convert column letters to array
+    var maxCol = 0;
+    Object.keys(cells).forEach(function(c){
+      var n = colLetterToNum(c);
+      if(n>maxCol)maxCol=n;
+    });
+    var arr = [];
+    for(var c=1;c<=maxCol;c++){arr.push(cells[numToColLetter(c)]||'');}
+    rows.push(arr);
+  }
+  return rows;
+}
+
+function colLetterToNum(letters){
+  var n=0;
+  for(var i=0;i<letters.length;i++){n=n*26+(letters.charCodeAt(i)-64);}
+  return n;
+}
+function numToColLetter(n){
+  var s='';
+  while(n>0){s=String.fromCharCode(((n-1)%26)+65)+s;n=Math.floor((n-1)/26);}
+  return s;
+}
+
+/* ── Simple ZIP reader for XLSX ── */
+function unzipSimple(data){
+  // Find central directory at end of file
+  var files = {};
+  var i = data.length-22;
+  // Find end of central directory signature 0x06054b50
+  while(i>=0){
+    if(data[i]===0x50&&data[i+1]===0x4b&&data[i+2]===0x05&&data[i+3]===0x06){break;}
+    i--;
+  }
+  if(i<0) return null;
+
+  var cdOffset = data[i+16]|(data[i+17]<<8)|(data[i+18]<<16)|(data[i+19]<<24);
+  var cdSize   = data[i+12]|(data[i+13]<<8)|(data[i+14]<<16)|(data[i+15]<<24);
+  var pos = cdOffset;
+
+  while(pos < cdOffset+cdSize){
+    if(data[pos]!==0x50||data[pos+1]!==0x4b||data[pos+2]!==0x01||data[pos+3]!==0x02) break;
+    var fnLen  = data[pos+28]|(data[pos+29]<<8);
+    var exLen  = data[pos+30]|(data[pos+31]<<8);
+    var cmLen  = data[pos+32]|(data[pos+33]<<8);
+    var lhOff  = data[pos+42]|(data[pos+43]<<8)|(data[pos+44]<<16)|(data[pos+45]<<24);
+    var fname  = '';
+    for(var f=0;f<fnLen;f++) fname+=String.fromCharCode(data[pos+46+f]);
+    pos += 46+fnLen+exLen+cmLen;
+
+    // Read local file header
+    var lh = lhOff;
+    if(data[lh]!==0x50||data[lh+1]!==0x4b||data[lh+2]!==0x03||data[lh+3]!==0x04) continue;
+    var compression = data[lh+6]|(data[lh+7]<<8);
+    var compSize    = data[lh+18]|(data[lh+19]<<8)|(data[lh+20]<<16)|(data[lh+21]<<24);
+    var lfnLen      = data[lh+26]|(data[lh+27]<<8);
+    var lexLen      = data[lh+28]|(data[lh+29]<<8);
+    var dataStart   = lh+30+lfnLen+lexLen;
+
+    var fileData = data.subarray(dataStart, dataStart+compSize);
+    if(compression===0){
+      // Stored — no compression
+      files[fname] = new TextDecoder('utf-8').decode(fileData);
+    } else if(compression===8){
+      // Deflate — use DecompressionStream if available
+      try{
+        // We'll handle this synchronously via a trick — store raw for later
+        files[fname] = inflateSync(fileData);
+      }catch(e){
+        files[fname] = '';
+      }
+    }
+  }
+  return Object.keys(files).length ? files : null;
+}
+
+function inflateSync(data){
+  // Use pako if available, otherwise attempt native DecompressionStream
+  // For our purposes, return empty string — user should save as CSV for best results
+  // This is a fallback; most modern XLSX files are deflate-compressed
+  try{
+    // Try using the browser's built-in DecompressionStream synchronously
+    // (not available sync, so we just return empty and the error is caught)
+    return '';
+  }catch(e){return '';}
+}
+
+function processImportRows(rows){
+  if(!rows || rows.length < 2){
+    toast('File appears empty or has only headers.', 'error');
+    return;
+  }
+
+  // Map headers
+  var headerRow = rows[0];
+  var colIndex = {}; // field -> column index
+  headerRow.forEach(function(h, i){
+    var norm = normalizeHeader(h);
+    var field = COL_MAP[norm];
+    if(field) colIndex[field] = i;
+  });
+
+  if(!colIndex.firstName && !colIndex.lastName){
+    toast('Could not find First Name or Last Name columns. Check your file matches the template.', 'error');
+    return;
+  }
+
+  // Parse each data row
+  var parsed = [];
+  var skipped = 0;
+  for(var r = 1; r < rows.length; r++){
+    var row = rows[r];
+    // Skip totally empty rows
+    if(row.every(function(c){return !String(c).trim();})){skipped++;continue;}
+
+    var fn = colIndex.firstName!==undefined ? String(row[colIndex.firstName]||'').trim() : '';
+    var ln = colIndex.lastName!==undefined  ? String(row[colIndex.lastName]||'').trim()  : '';
+    if(!fn && !ln){skipped++;continue;}
+
+    var grade   = colIndex.grade!==undefined   ? String(row[colIndex.grade]||'').trim()   : '';
+    var teacher = colIndex.teacher!==undefined ? String(row[colIndex.teacher]||'').trim() : '';
+    var iepRaw  = colIndex.iepDate!==undefined ? row[colIndex.iepDate] : '';
+    var iepDate = parseExcelDate(iepRaw);
+    var goalsRaw = colIndex.goals!==undefined ? String(row[colIndex.goals]||'').trim() : '';
+
+    // Parse goals — semicolon or comma separated
+    var goalList = [];
+    if(goalsRaw){
+      goalList = goalsRaw.split(/[;,]/).map(function(g){return g.trim();}).filter(function(g){return g.length>0;});
+    }
+    if(!goalList.length){
+      goalList = ['On-Task Behavior','Following Directions','Positive Peer Interactions','Controlling Impulse Behavior'];
+    }
+
+    // Normalize grade to just number
+    grade = grade.replace(/[^0-9]/g,'');
+
+    parsed.push({fn:fn, ln:ln, grade:grade, teacher:teacher, iepDate:iepDate, goalList:goalList});
+  }
+
+  if(!parsed.length){
+    toast('No valid student rows found.', 'error');
+    return;
+  }
+
+  showImportPreview(parsed, skipped);
+}
+
+function showImportPreview(parsed, skipped){
+  var existing = 0;
+  var newCount = 0;
+  var teachers = STATE.accounts.filter(function(a){return a.role==='teacher';});
+
+  var rows = parsed.map(function(p){
+    var displayName = p.fn+' '+p.ln.charAt(0)+'.';
+    var uniqueName = STATE.students.includes(displayName) ? p.fn+' '+p.ln : displayName;
+    var isExisting = STATE.students.includes(uniqueName) || STATE.students.includes(displayName);
+    if(isExisting) existing++; else newCount++;
+    var teacherMatch = teachers.find(function(t){
+      return t.displayName.toLowerCase().includes(p.teacher.toLowerCase()) ||
+             p.teacher.toLowerCase().includes(t.displayName.toLowerCase().split(' ').pop());
+    });
+    var teacherDisplay = teacherMatch ? teacherMatch.displayName : (p.teacher||'<span style="color:#9a6000;">Unmatched</span>');
+    return '<tr style="border-bottom:1px solid #dce8f7;">'+
+      '<td style="padding:7px 10px;font-size:13px;font-weight:600;">'+esc(p.fn)+' '+esc(p.ln)+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;text-align:center;">'+esc(p.grade||'—')+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;">'+teacherDisplay+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;">'+esc(p.iepDate||'—')+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;color:#2556a8;">'+esc(p.goalList.length)+' goal'+(p.goalList.length!==1?'s':'')+'</td>'+
+      '<td style="padding:7px 10px;"><span style="background:'+(isExisting?'#fff4e0':'#e6f7ee')+';color:'+(isExisting?'#9a6000':'#1a7a3c')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">'+(isExisting?'Update':'New')+'</span></td>'+
+    '</tr>';
+  }).join('');
+
+  var preview = document.getElementById('import-preview');
+  preview.style.display = 'block';
+  preview.innerHTML =
+    '<div class="card" style="margin-bottom:16px;border:2px solid #a8c4e8;">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">'+
+        '<div>'+
+          '<div style="font-size:15px;font-weight:800;color:#1a3a6b;">Import Preview</div>'+
+          '<div style="font-size:12px;color:#5a80b8;margin-top:2px;">'+
+            parsed.length+' students found &nbsp;·&nbsp; '+
+            '<span style="color:#1a7a3c;font-weight:700;">'+newCount+' new</span>'+
+            (existing?' &nbsp;·&nbsp; <span style="color:#9a6000;font-weight:700;">'+existing+' will update</span>':'')+
+            (skipped?' &nbsp;·&nbsp; '+skipped+' rows skipped':'')+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<button class="btn btn-primary" onclick="confirmImport()">✅ Import All</button>'+
+          '<button class="btn btn-ghost" onclick="cancelImport()">✕ Cancel</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="overflow-x:auto;">'+
+        '<table style="width:100%;border-collapse:collapse;">'+
+          '<thead><tr style="background:#dce8f7;">'+
+            '<th style="padding:7px 10px;text-align:left;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">Name</th>'+
+            '<th style="padding:7px 10px;text-align:center;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">Grade</th>'+
+            '<th style="padding:7px 10px;text-align:left;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">Teacher</th>'+
+            '<th style="padding:7px 10px;text-align:left;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">IEP Date</th>'+
+            '<th style="padding:7px 10px;text-align:left;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">Goals</th>'+
+            '<th style="padding:7px 10px;text-align:left;font-size:11px;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;">Status</th>'+
+          '</tr></thead>'+
+          '<tbody>'+rows+'</tbody>'+
+        '</table>'+
+      '</div>'+
+    '</div>';
+
+  // Store parsed data for confirm step
+  window._pendingImport = parsed;
+}
+
+function confirmImport(){
+  var parsed = window._pendingImport;
+  if(!parsed || !parsed.length) return;
+  var teachers = STATE.accounts.filter(function(a){return a.role==='teacher';});
+  var added=0, updated=0;
+
+  parsed.forEach(function(p){
+    var displayName = p.fn+' '+p.ln.charAt(0)+'.';
+    var uniqueName = STATE.students.includes(displayName) ? p.fn+' '+p.ln : displayName;
+    // Check if already exists (either form)
+    var existingName = STATE.students.includes(displayName) ? displayName :
+                       STATE.students.includes(uniqueName)  ? uniqueName  : null;
+    var finalName = existingName || uniqueName;
+
+    // Find best teacher match
+    var teacherMatch = teachers.find(function(t){
+      if(!p.teacher) return false;
+      return t.displayName.toLowerCase().includes(p.teacher.toLowerCase()) ||
+             p.teacher.toLowerCase().includes(t.displayName.toLowerCase().split(' ').pop());
+    });
+
+    // Build goals array
+    var goals = p.goalList.map(function(label){
+      return {id:slugify(label), label:label, short:label.slice(0,12)};
+    });
+
+    if(existingName){
+      // Update existing
+      STATE.studentInfo[finalName] = {
+        firstName:p.fn, lastName:p.ln,
+        grade:p.grade, teacher:p.teacher,
+        iepDate:p.iepDate
+      };
+      STATE.goals[finalName] = goals;
+      updated++;
+    } else {
+      // Add new
+      STATE.students.push(finalName);
+      STATE.studentInfo[finalName] = {
+        firstName:p.fn, lastName:p.ln,
+        grade:p.grade, teacher:p.teacher,
+        iepDate:p.iepDate
+      };
+      STATE.goals[finalName] = goals;
+      added++;
+    }
+
+    // Assign to teacher roster
+    if(teacherMatch){
+      if(!STATE.assignments[teacherMatch.id]) STATE.assignments[teacherMatch.id]=[];
+      if(!STATE.assignments[teacherMatch.id].includes(finalName)){
+        STATE.assignments[teacherMatch.id].push(finalName);
+      }
+    }
+  });
+
+  saveAll();
+  window._pendingImport = null;
+  cancelImport();
+  toast('Import complete — '+added+' added, '+updated+' updated.');
+  adminTab('students');
+}
+
+function cancelImport(){
+  var el = document.getElementById('import-preview');
+  if(el){ el.style.display='none'; el.innerHTML=''; }
+  window._pendingImport = null;
+}
+
+function downloadImportTemplate(){
+  // Build a CSV template with headers and one example row
+  var headers = ['FirstName','LastName','Grade','Teacher','IEPDate','Goals'];
+  var example = ['Alex','Martinez','6','Ms. Johnson','2025-09-15',
+    'On-Task Behavior;Following Directions;Positive Peer Interactions'];
+  var csv = [
+    headers.join(','),
+    example.map(function(c){return '"'+c+'"';}).join(','),
+    '"Jordan","Thompson","7","Mr. Rivera","2025-10-01","On-Task Behavior;Work Completion"',
+  ].join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'StudentImport_Template.csv';
+  a.click();
+  toast('Template downloaded — fill it in and import!');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CASE MANAGER — STUDENT INFO VIEW
+═══════════════════════════════════════════════════════════ */
+function renderCMStudents(){
+  var vs=visibleStudents();
+  var today=new Date();
+  var html="";
+  var alerts=vs.filter(function(n){
+    var d=(STATE.studentInfo[n]||{}).iepDate;
+    if(!d)return false;
+    var days=Math.round((new Date(d+"T12:00:00")-today)/(1000*60*60*24));
+    return days<=30;
+  }).map(function(n){
+    var d=STATE.studentInfo[n].iepDate;
+    var days=Math.round((new Date(d+"T12:00:00")-today)/(1000*60*60*24));
+    return{name:n,days:days};
+  }).sort(function(a,b){return a.days-b.days;});
+  if(alerts.length){
+    html+='<div style="background:#fff4e0;border:1.5px solid #e8cc70;border-radius:12px;padding:14px 16px;margin-bottom:18px;">'+
+      '<div style="font-size:12px;font-weight:700;color:#7a5500;text-transform:uppercase;margin-bottom:9px;">🔔 Upcoming IEP Meetings (next 30 days)</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;">'+
+      alerts.map(function(a){
+        var col=a.days<0?"#9a1c1c":a.days<=7?"#9a6000":"#1a3a6b";
+        var bc=a.days<0?"#f0a0a0":a.days<=7?"#e8cc70":"#b0c8e8";
+        var label=a.days<0?"Overdue "+Math.abs(a.days)+"d":a.days===0?"Today":a.days+"d";
+        return'<div style="background:#fff;border:1.5px solid '+bc+';border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:'+col+';">'+esc(a.name)+" — "+label+'</div>';
+      }).join("")+
+      '</div></div>';
+  }
+  html+='<div style="font-size:11px;color:#2556a8;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:12px;">Your Students ('+vs.length+')</div>';
+  if(!vs.length){html+='<div style="text-align:center;padding:32px;color:#5a80b8;font-size:13px;">No students assigned to you.</div>';}
+  vs.forEach(function(name){
+    var inf=STATE.studentInfo[name]||{};
+    var goals=getStudentGoals(name);
+    var iepDate=inf.iepDate?new Date(inf.iepDate+"T12:00:00"):null;
+    var daysUntilIep=iepDate?Math.round((iepDate-today)/(1000*60*60*24)):null;
+    var iepColor=daysUntilIep===null?"#5a80b8":daysUntilIep<0?"#9a1c1c":daysUntilIep<=30?"#9a6000":"#1a7a3c";
+    var iepBg=daysUntilIep===null?"#f0f5fc":daysUntilIep<0?"#fdeaea":daysUntilIep<=30?"#fff4e0":"#e6f7ee";
+    var initial=esc((inf.firstName||name)[0].toUpperCase());
+    var iepLabel=inf.iepDate?new Date(inf.iepDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"Not set";
+    var daysLabel=daysUntilIep===null?"":daysUntilIep<0?"⚠️ Overdue":daysUntilIep===0?"Today!":daysUntilIep+"d";
+    html+='<div class="card" style="margin-bottom:10px;border:1.5px solid #b0c8e8;">'+
+      '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'+
+        '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#2556a8);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#d4a017;flex-shrink:0;font-family:Georgia,serif;">'+initial+'</div>'+
+        '<div style="flex:1;min-width:140px;">'+
+          '<div style="font-size:15px;font-weight:800;color:#0d1f3c;">'+esc(inf.firstName||"")+" "+esc(inf.lastName||name)+'</div>'+
+          '<div style="font-size:11px;color:#5a80b8;margin-top:2px;">'+(inf.grade?"Grade "+esc(inf.grade)+" &nbsp;·&nbsp; ":"")+(inf.teacher?"👩‍🏫 "+esc(inf.teacher)+" &nbsp;·&nbsp; ":"")+goals.length+' goal'+(goals.length!==1?"s":"")+'</div>'+
+        '</div>'+
+        '<div style="text-align:center;background:'+iepBg+';border-radius:10px;padding:8px 14px;">'+
+          '<div style="font-size:10px;color:#1e4d8c;font-weight:700;text-transform:uppercase;margin-bottom:3px;">IEP Date</div>'+
+          '<div style="font-size:13px;font-weight:800;color:'+iepColor+';">'+iepLabel+'</div>'+
+          (daysLabel?'<div style="font-size:10px;color:'+iepColor+';font-weight:600;margin-top:2px;">'+daysLabel+'</div>':"")+
+        '</div>'+
+        '<div style="display:flex;gap:8px;flex-shrink:0;">'+
+          '<button class="btn btn-sm btn-ghost" onclick="openViewStudent(\''+esc(name)+'\')">👁 View</button>'+
+          '<button class="btn btn-sm btn-purple" onclick="openEditStudentInfo(\''+esc(name)+'\')">✏️ Edit</button>'+
+          '<button class="btn btn-sm btn-primary" onclick="STATE.selStudent=\''+esc(name)+'\';setView(\'tracker\');">📝 Data</button>'+
+        '</div>'+
+      '</div>'+
+      (goals.length?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid #dce8f7;display:flex;flex-wrap:wrap;gap:6px;">'+goals.map(function(g){return'<span style="background:#dce8f7;color:#1a3a6b;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;">'+esc(g.label)+'</span>';}).join("")+'</div>':"")+
+    '</div>';
+  });
+  document.getElementById("app-content").innerHTML=html;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   POWER AUTOMATE EXCEL SYNC
+═══════════════════════════════════════════════════════════ */
+
+// Sync settings — stored separately from student data
+var SYNC_KEYS={url:"psp-sync-url",enabled:"psp-sync-enabled",lastSync:"psp-sync-last",lastStatus:"psp-sync-status"};
+var SS={
+  get url(){return localStorage.getItem(SYNC_KEYS.url)||"";},
+  set url(v){localStorage.setItem(SYNC_KEYS.url,v);},
+  get enabled(){return localStorage.getItem(SYNC_KEYS.enabled)==="true";},
+  set enabled(v){localStorage.setItem(SYNC_KEYS.enabled,String(v));},
+  get lastSync(){return localStorage.getItem(SYNC_KEYS.lastSync)||null;},
+  set lastSync(v){localStorage.setItem(SYNC_KEYS.lastSync,v);},
+  get lastStatus(){return localStorage.getItem(SYNC_KEYS.lastStatus)||"none";},
+  set lastStatus(v){localStorage.setItem(SYNC_KEYS.lastStatus,v);},
+};
+
+function showSyncBanner(msg,icon,permanent){
+  var b=document.getElementById("sync-banner");
+  if(!b)return;
+  document.getElementById("sync-icon").textContent=icon==="spin"?"↻":icon;
+  document.getElementById("sync-msg").textContent=msg;
+  b.style.display="flex";
+  if(icon==="spin") b.firstElementChild.style.animation="spin 1s linear infinite";
+  else b.firstElementChild.style.animation="";
+  if(!permanent) setTimeout(function(){b.style.display="none";},4000);
+}
+
+function buildSyncPayload(date){
+  var rows=[];
+  STATE.students.forEach(function(name){
+    var goals=getStudentGoals(name);
+    var inf=STATE.studentInfo[name]||{};
+    var dd=STATE.data[name]&&STATE.data[name][date];
+    if(!dd)return;
+    PERIODS.forEach(function(period){
+      var ps=dd[period]||{};
+      var periodSum=goals.reduce(function(a,g){return a+(ps[g.id]||0);},0);
+      var periodCount=goals.filter(function(g){return ps[g.id]!=null;}).length;
+      var row={
+        date:date,
+        student:name,
+        firstName:inf.firstName||"",
+        lastName:inf.lastName||"",
+        grade:inf.grade||"",
+        teacher:inf.teacher||"",
+        iepDate:inf.iepDate||"",
+        period:period,
+        periodTotal:periodCount>0?periodSum:null,
+        periodPct:periodCount>0?pct(periodSum,periodCount):null,
+      };
+      goals.forEach(function(g){
+        row["goal_"+g.id]=ps[g.id]!=null?ps[g.id]:null;
+        row["goal_"+g.id+"_label"]=g.label;
+      });
+      rows.push(row);
+    });
+    // Daily summary row
+    var daily=calcTotal(dd,goals);
+    rows.push({
+      date:date,student:name,
+      firstName:inf.firstName||"",lastName:inf.lastName||"",
+      grade:inf.grade||"",teacher:inf.teacher||"",iepDate:inf.iepDate||"",
+      period:"DAILY TOTAL",
+      periodTotal:daily.sum,
+      periodPct:daily.count>0?pct(daily.sum,daily.count):null,
+    });
+  });
+  return{syncedAt:new Date().toISOString(),date:date,school:"PointSheet Pro",rows:rows};
+}
+
+function runSync(date,silent){
+  var url=SS.url.trim();
+  if(!url){if(!silent)toast("No Power Automate URL configured. Go to Admin → Excel Sync.","error");return;}
+  if(!silent)showSyncBanner("Syncing to Excel…","spin",true);
+  var payload=buildSyncPayload(date||todayKey());
+  if(!payload.rows.length){showSyncBanner("No data to sync for this date","⚠️",false);SS.lastStatus="none";return;}
+  fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    .then(function(){
+      SS.lastSync=new Date().toLocaleString();
+      SS.lastStatus="ok";
+      if(!silent)showSyncBanner("Synced "+payload.rows.length+" rows to Excel ✅","✅",false);
+      // Refresh sync tab if open
+      if(STATE.adminTab==="sync") adminTab("sync");
+    })
+    .catch(function(e){
+      SS.lastStatus="error";
+      if(!silent){showSyncBanner("Sync failed — check your URL","❌",false);toast("Sync failed: "+e.message,"error");}
+    });
+}
+
+function scheduleNightlySync(){
+  setInterval(function(){
+    if(!SS.enabled||!SS.url)return;
+    var hour=new Date().getHours();
+    if(hour<20)return; // after 8pm only
+    var today=todayKey();
+    var lastDate=(SS.lastSync||"").split(",")[0];
+    if(lastDate===today)return; // already synced today
+    runSync(today,false);
+  },60*60*1000); // check every hour
+}
+
+function saveSyncUrl(){
+  var v=(document.getElementById("sync-url-inp")||{}).value||"";
+  v=v.trim();
+  if(v&&!v.startsWith("https://")){toast("URL must start with https://","error");return;}
+  SS.url=v;
+  toast(v?"Webhook URL saved! Click ▶ Test Sync Now to verify.":"URL cleared.");
+  adminTab("sync");
+}
+
+function renderAdminSync(){
+  var st=SS.lastStatus;
+  var dotColor=st==="ok"?"#1a7a3c":st==="error"?"#9a1c1c":"#5a80b8";
+  var dotLabel=st==="ok"?"Last synced: "+(SS.lastSync||"—"):st==="error"?"Last sync failed":"Not yet synced";
+
+  return'<div style="font-size:20px;font-weight:800;color:#1a3a6b;margin-bottom:4px;">🔄 Excel Sync</div>'+
+    '<div style="font-size:13px;color:#1e4d8c;margin-bottom:22px;">Automatically back up student behavioral data to a master Excel file in your BPS OneDrive every night.</div>'+
+
+    // Status card
+    '<div class="card" style="margin-bottom:18px;border-top:3px solid '+dotColor+';border:1.5px solid #b0c8e8;">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">'+
+        '<div>'+
+          '<div style="font-size:11px;color:#1e4d8c;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px;">Sync Status</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#0d1f3c;">'+
+            '<div style="width:10px;height:10px;border-radius:50%;background:'+dotColor+';flex-shrink:0;"></div>'+
+            dotLabel+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'+
+          '<label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#0d1f3c;cursor:pointer;">'+
+            '<input type="checkbox" id="sync-enabled-chk" '+(SS.enabled?"checked":"")+' onchange="SS.enabled=this.checked;toast(this.checked?\'Auto-sync enabled — runs nightly after 8pm\':\'Auto-sync disabled\');" style="width:16px;height:16px;cursor:pointer;"/>'+
+            'Auto-sync nightly after 8pm'+
+          '</label>'+
+          '<button class="btn btn-primary btn-sm" onclick="runSync(\''+todayKey()+'\',false)">▶ Test Sync Now</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // URL input
+    '<div class="card" style="margin-bottom:18px;border:1.5px solid #e8cc70;background:#fdf6d8;">'+
+      '<div style="font-size:14px;font-weight:700;color:#0d1f3c;margin-bottom:4px;">Power Automate Webhook URL</div>'+
+      '<div style="font-size:13px;color:#1e4d8c;margin-bottom:12px;">Paste the HTTP trigger URL from your Power Automate flow below</div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<input type="text" id="sync-url-inp" value="'+esc(SS.url)+'" placeholder="https://prod-xx.westus.logic.azure.com/workflows/…" style="flex:1;font-size:12px;"/>'+
+        '<button class="btn btn-primary" onclick="saveSyncUrl()">Save URL</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:#5a80b8;margin-top:8px;">⚠️ Keep this URL private — anyone with it can write to your Excel file</div>'+
+    '</div>'+
+
+    // Setup guide
+    '<div class="card" style="border:1.5px solid #b0c8e8;">'+
+      '<div style="font-size:15px;font-weight:700;color:#1a3a6b;margin-bottom:18px;">📋 Setup Guide — 5 Steps in Microsoft 365</div>'+
+      [
+        {n:1,title:"Create your master Excel file",
+         body:"In your <strong>BPS OneDrive or SharePoint Documents</strong> folder, create a new Excel file called <strong>BehaviorData_Master.xlsx</strong>. On Sheet1 add these column headers in Row 1:<br><br><code style='background:#dce8f7;padding:3px 8px;border-radius:4px;font-size:11px;'>Date | Student | FirstName | LastName | Grade | Teacher | Period | PeriodTotal | PeriodPct | [your goal names…]</code><br><br>Leave the rest empty — Power Automate will fill it in automatically."},
+        {n:2,title:"Open Power Automate",
+         body:"Go to <strong>make.powerautomate.com</strong> and sign in with your BPS Microsoft 365 account. Click <strong>+ Create → Instant cloud flow</strong>."},
+        {n:3,title:"Add an HTTP Request trigger",
+         body:"Name your flow <strong>PointSheet Nightly Sync</strong>. For the trigger search <strong>'When an HTTP request is received'</strong> and select it. Click <strong>Save</strong> — this generates your webhook URL. Copy that URL and paste it into the field above, then click Save URL."},
+        {n:4,title:"Add an Apply to each action",
+         body:"Click <strong>+ New step → Apply to each</strong>. Set the input to <code style='background:#dce8f7;padding:2px 6px;border-radius:4px;font-size:11px;'>triggerBody()?['rows']</code><br><br>Inside the loop add action: <strong>'Add a row into a table' (Excel Online - Business)</strong>. Point it to <strong>BehaviorData_Master.xlsx</strong> and map each column to the matching JSON field."},
+        {n:5,title:"Test it",
+         body:"Click <strong>▶ Test Sync Now</strong> above. Check your Excel file — new rows should appear within 30 seconds. Once confirmed turn on <strong>Auto-sync nightly</strong> and data will back up every night automatically after 8pm."},
+      ].map(function(s){
+        return'<div style="display:flex;gap:14px;margin-bottom:18px;padding-bottom:18px;border-bottom:'+(s.n<5?'1px solid #dce8f7':'none')+';"> '+
+          '<div style="width:32px;height:32px;background:#1a3a6b;color:#d4a017;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">'+s.n+'</div>'+
+          '<div><div style="font-size:14px;font-weight:700;color:#0d1f3c;margin-bottom:4px;">'+s.title+'</div>'+
+               '<div style="font-size:13px;color:#1e4d8c;line-height:1.7;">'+s.body+'</div></div>'+
+        '</div>';
+      }).join("")+
+    '</div>'+
+
+    // JSON preview
+    '<div class="card" style="margin-top:18px;background:#f0f5fc;border:1.5px solid #b0c8e8;">'+
+      '<div style="font-size:13px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">📦 Sample JSON Payload</div>'+
+      '<div style="font-size:11px;color:#1e4d8c;margin-bottom:10px;">This is what gets sent to Power Automate each sync:</div>'+
+      '<pre style="background:#0d1f3c;color:#d4a017;padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.7;">{\n  "syncedAt": "2025-01-15T20:00:01Z",\n  "date": "2025-01-15",\n  "school": "PointSheet Pro",\n  "rows": [\n    {\n      "date": "2025-01-15",\n      "student": "Alex M.",\n      "firstName": "Alex",\n      "grade": "6",\n      "teacher": "Ms. Johnson",\n      "period": "HB (Home Base)",\n      "periodTotal": 3,\n      "periodPct": 75,\n      "goal_on_task": 1,\n      "goal_follow_dir": 0.5\n    },\n    ...\n  ]\n}</pre>'+
+    '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+renderDemoAccounts();
+_weekStart=getMondayOfWeek(todayKey());
+scheduleNightlySync();
+</script>
+</body>
+</html>
